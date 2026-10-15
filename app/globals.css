@@ -328,3 +328,12 @@ body:has(.home){background:#0B0B0B}
 .rnote time{font-family:var(--mono);font-size:11px;color:var(--fg3)}
 .rnote p{margin:2px 0 0;white-space:pre-wrap;font-size:13.5px}
 @media (max-width:760px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.qual{display:flex;flex-direction:column;gap:8px}
+.qual-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px}
+.qual-row select{min-width:140px}
+.qual-warn{margin:10px 0 0;font-size:13px;color:var(--crit)}
+.answers{margin-top:12px;font-size:13px}
+.answers summary{cursor:pointer;color:var(--fg2)}
+.answers dl{margin-top:8px}
+.answers dd{white-space:pre-wrap}
+.codebox{display:block;font-family:var(--mono);font-size:12.5px;background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:9px 11px;overflow-x:auto;white-space:nowrap}

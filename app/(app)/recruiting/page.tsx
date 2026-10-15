@@ -86,10 +86,15 @@ export default function Recruiting() {
       </p>
       {showClosed && closed.length > 0 && (
         <section className="panel" style={{ marginTop: 8 }}>
+          {(() => {
+            const why = new Map<string, number>();
+            closed.forEach(r => { const k = r.status === 'Handed Off' ? 'Handed off' : r.disqualify_reason || STATUS_LABEL[r.status]; why.set(k, (why.get(k) ?? 0) + 1); });
+            return <div className="meta" style={{ marginBottom: 8 }}>{Array.from(why).sort((a, b) => b[1] - a[1]).map(([k, n]) => <span key={k} className="pill">{k} · {n}</span>)}</div>;
+          })()}
           <div className="tlist">{closed.map(r => (
             <div key={r.id} className="trow" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
               <div style={{ minWidth: 0 }}><button className="ttitle" onClick={() => setOpenId(r.id)}>{r.name}</button>
-                <div className="meta"><span>{STATUS_LABEL[r.status]}</span>{r.manager_id && <span>{managers.find(m => m.id === r.manager_id)?.name}</span>}</div></div>
+                <div className="meta"><span>{STATUS_LABEL[r.status]}</span>{r.disqualify_reason && <span>{r.disqualify_reason}</span>}{r.manager_id && <span>{managers.find(m => m.id === r.manager_id)?.name}</span>}</div></div>
               <span className="due">{r.handed_off_at ? fmtDate(dayOf(r.handed_off_at)) : ''}</span>
             </div>))}
           </div>
@@ -141,6 +146,9 @@ function RecruitCard({ r, managers, onOpen }: { r: Recruit; managers: Manager[];
         {r.age != null && <span>{r.age}</span>}
         {r.licensed !== 'Unknown' && <span className={`pill ${r.licensed === 'Licensed' ? 'ok' : ''}`}>{r.licensed}</span>}
         {['No Show', 'Reschedule', 'Follow-up Needed'].includes(r.status) && <span className="pill high">{STATUS_LABEL[r.status]}</span>}
+        {r.us_based === 'No' && <span className="pill crit">Outside U.S.</span>}
+        {r.other_agency === 'Yes' && <span className="pill crit">Other agency</span>}
+        {r.source === 'iClosed' && r.status === 'Scheduled' && <span>iClosed</span>}
       </span>
       {m && <span className="rcard-mgr">→ {m.name}{r.group_chat_confirmed ? ' · chat ✓' : ''}</span>}
     </button>

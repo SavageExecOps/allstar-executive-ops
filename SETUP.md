@@ -85,3 +85,33 @@ The first time you sign in, the app loads your 12 starting items, 5 projects, yo
 | Red banner: "relation … does not exist" | The SQL in Step 1 didn't run fully. Run `supabase/setup.sql` again on a fresh project. |
 | Vercel build fails mentioning `SUPABASE` | One of the two environment variables is missing or misspelled. Fix it in Vercel → Settings → Environment Variables, then **Redeploy**. |
 | Page loads but stays on "Loading your workspace…" | The anon key is wrong. Copy it again from Supabase, update it in Vercel, redeploy. |
+
+---
+
+## Recruiting calls from Google Calendar (iClosed)
+
+iClosed books recruiting calls onto a Google Calendar. A small script in **that** Google account (the recruiting one, not Wylie's main Gmail) checks the calendar every 15 minutes and sends new, moved and cancelled calls to Executive Ops. About 10 minutes, one time.
+
+### A. Run the database update
+In Supabase → **SQL Editor → New query**, paste `supabase/migrations/0006_qualify_intake.sql` and click **Run**. (Skip if already done.)
+
+### B. Add three secrets in Vercel
+Vercel → your project → **Settings → Environment Variables**. Add:
+
+| Name | Value |
+|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → **Project Settings → API Keys** → the **secret** key (or the legacy `service_role` key). Never share this one. |
+| `INTAKE_SECRET` | Any long random string, at least 16 characters. You'll paste the same value into the script. |
+| `INTAKE_OWNER_EMAIL` | The email you sign in to Executive Ops with. |
+
+Then **Deployments → ⋯ → Redeploy** so the site picks them up. In the app, **Settings → Recruiting intake** should now say **Ready**.
+
+### C. Install the script in the recruiting Google account
+1. Sign in to Google with the **recruiting calendar's** account.
+2. Go to **script.google.com → New project**. Name it "Executive Ops recruiting sync".
+3. Delete what's there, and paste in all of `integrations/google-calendar-recruiting.gs`.
+4. At the top, fill in `INTAKE_KEY` (your `INTAKE_SECRET`). Leave `CALENDAR_ID` as `primary` unless iClosed books onto a different calendar in that account.
+5. Pick **listUpcoming** in the function dropdown and click **Run**. Approve the calendar permission. The log shows your next events. If recruiting calls aren't marked "← would sync", set `TITLE_MATCH` to a word every recruiting call title contains (for example the iClosed event name) and run it again.
+6. Pick **setup** and click **Run**. It now syncs every 15 minutes on its own.
+
+New bookings appear under **Booked**. Moves update the call time. Cancellations move the recruit to **Didn't connect** with a note.

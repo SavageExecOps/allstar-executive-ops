@@ -13,6 +13,12 @@ export default function Settings() {
   const [theme, setTheme] = useState<Theme>('');
   const [exported, setExported] = useState<string | null>(null);
   const [name, setName] = useState(data.homeName);
+  const [intake, setIntake] = useState<boolean | null>(null);
+  const [origin, setOrigin] = useState('');
+  useEffect(() => {
+    setOrigin(window.location.origin);
+    fetch('/api/intake/iclosed').then(r => r.json()).then(j => setIntake(!!j.configured)).catch(() => setIntake(false));
+  }, []);
   useEffect(() => { try { setTheme((localStorage.getItem('aeo.theme') as Theme) ?? ''); } catch { /* ignore */ } }, []);
 
   function applyTheme(t: Theme) {
@@ -50,6 +56,13 @@ export default function Settings() {
             <button className="btn sm">Save</button>
           </form>
           <p className="hint">Shows as “Good morning, {name.trim() || 'Savage'}.” The line under it changes every time you open the page.</p>
+        </section>
+        <section className="panel">
+          <div className="panel-h"><h2 className="sec">Recruiting intake</h2>
+            <span className={`pill ${intake ? 'ok' : 'conf'}`}>{intake === null ? 'Checking…' : intake ? 'Ready' : 'Not set up'}</span></div>
+          <p className="sub" style={{ margin: '0 0 10px' }}>Booked calls from your Google Calendar (iClosed) land in Recruiting on their own. The intake address:</p>
+          <code className="codebox">{origin}/api/intake/iclosed</code>
+          <p className="hint">Setup steps are in SETUP.md under “Recruiting calls from Google Calendar.” The secret key lives in Vercel, never here.</p>
         </section>
         <section className="panel">
           <div className="panel-h"><h2 className="sec">Appearance</h2></div>

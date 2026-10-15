@@ -19,6 +19,8 @@ export async function middleware(request: NextRequest) {
     },
   );
   const { data: { user } } = await supabase.auth.getUser();
+  // The iClosed intake authenticates with its own secret key, not a browser session.
+  if (request.nextUrl.pathname.startsWith('/api/intake/')) return NextResponse.next();
   const isLogin = request.nextUrl.pathname.startsWith('/login');
   if (!user && !isLogin) {
     const url = request.nextUrl.clone(); url.pathname = '/login'; url.search = '';

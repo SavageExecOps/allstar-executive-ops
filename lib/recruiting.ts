@@ -31,6 +31,7 @@ export const STATUS_LABEL: Record<RecruitStatus, string> = {
 };
 
 export const LICENSED = ['Unknown', 'Licensed', 'In progress', 'Not licensed'] as const;
+export const DISQUALIFY_REASONS = ['Not in the U.S.', 'With another agency', 'Not interested', 'Didn’t show / no response', 'Other'] as const;
 export const ASSIGN_REASONS = ['Round robin', 'Location', 'Vibe', 'Age 30+', 'Other'] as const;
 
 export interface Recruit {
@@ -50,6 +51,11 @@ export interface Recruit {
   next_action: string | null;
   follow_up_date: string | null;
   notes: string | null;
+  us_based: 'Unknown' | 'Yes' | 'No';
+  other_agency: 'Unknown' | 'Yes' | 'No';
+  other_agency_name: string | null;
+  disqualify_reason: string | null;
+  form_answers: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 }
