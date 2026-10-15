@@ -15,7 +15,7 @@
 var INTAKE_URL  = 'https://allstar-executive-ops.vercel.app/api/intake/iclosed';
 var INTAKE_KEY  = 'PASTE_YOUR_INTAKE_SECRET_HERE';   // same value as INTAKE_SECRET in Vercel
 var CALENDAR_ID = 'primary';                          // or the calendar iClosed books onto
-var TITLE_MATCH = '';                                 // text every recruiting call title contains, e.g. "Discovery Call"
+var TITLE_MATCH = 'Interview with Allstar';          // text every recruiting call title contains
 var DAYS_AHEAD  = 30;
 // ---------------------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ function syncRecruitingCalls() {
     send({
       event: seen[id] ? 'rescheduled' : 'booked',
       external_id: id,
-      name: (guest && guest.getName()) || nameFromTitle(ev.getTitle()) || (guest && guest.getEmail()) || '',
+      name: nameFromTitle(ev.getTitle()) || (guest && guest.getName()) || (guest && guest.getEmail()) || '',
       email: guest ? guest.getEmail() : '',
       phone: phoneFrom(details),
       call_time: start,
@@ -92,10 +92,12 @@ function send(payload) {
   if (res.getResponseCode() >= 300) Logger.log('Intake said ' + res.getResponseCode() + ': ' + res.getContentText());
 }
 
-/** "Discovery Call with Jane Doe" / "Jane Doe and Savage" → "Jane Doe" (best effort). */
+/** "Mark Sharkozy Interview with Allstar" → "Mark Sharkozy"; also "Call with Jane Doe" (best effort). */
 function nameFromTitle(title) {
-  var m = /(?:with|w\/)\s+([A-Z][\w'.-]+(?:\s+[A-Z][\w'.-]+)+)/.exec(title || '') || /^([A-Z][\w'.-]+(?:\s+[A-Z][\w'.-]+)+)\s+(?:and|&|<>)\s/.exec(title || '');
-  return m ? m[1] : '';
+  title = title || '';
+  var m = /^(.+?)\s+(?:interview|call|meeting)\b/i.exec(title)
+       || /(?:with|w\/)\s+([A-Z][\w'.-]+(?:\s+[A-Z][\w'.-]+)+)/.exec(title);
+  return m ? m[1].trim() : '';
 }
 function phoneFrom(text) {
   var m = /(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/.exec(text || '');
