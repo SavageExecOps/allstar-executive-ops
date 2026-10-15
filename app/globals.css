@@ -230,18 +230,9 @@ textarea{resize:vertical;width:100%}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 /* production additions */
-.brand img,.brand svg{width:46px;height:auto;flex:none}
+.brand img,.brand svg{width:44px;height:auto;flex:none}
 .loading{display:grid;place-items:center;min-height:60vh;color:var(--fg3)}
 .err{border:1px solid var(--crit);background:var(--crit-soft);color:var(--crit);border-radius:var(--r);padding:14px 16px;margin-bottom:16px}
-.login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.login-art{background:var(--rail);color:var(--rail-fg);display:flex;flex-direction:column;justify-content:space-between;padding:48px max(32px,env(safe-area-inset-left,0px))}
-.login-art svg{width:min(360px,80%);height:auto;color:var(--rail-fg)}
-.login-art h2{font-family:var(--display);font-stretch:112%;font-weight:800;font-size:34px;letter-spacing:.04em;margin:0;line-height:1.05}
-.login-art p{color:var(--rail-dim);margin:8px 0 0;letter-spacing:.2em;font-size:11px;text-transform:uppercase}
-.login-form{display:grid;place-items:center;padding:32px max(24px,env(safe-area-inset-right,0px)) 32px 24px}
-.login-form form{width:min(360px,100%);display:flex;flex-direction:column;gap:14px}
-.login-form input{padding:10px 12px}
-@media (max-width:760px){.login{grid-template-columns:1fr}.login-art{padding:28px 20px;gap:24px}.login-art svg{width:180px}}
 .pref-row{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
 .pref-row:first-of-type{border-top:0}
 
@@ -254,10 +245,10 @@ a.btn.gold{color:var(--accent-fg)}
 .home{--h-bg:#0B0B0B;--h-fg:#F2F2EF;--h-dim:#8F8F88;--h-line:#2A2A28;--h-gold:#C9A766;--h-gold-hi:#E3C88F;
   position:relative;min-height:100%;box-sizing:border-box;background:var(--h-bg);color:var(--h-fg);overflow:hidden;display:flex;flex-direction:column;color-scheme:dark}
 body:has(.home){background:#0B0B0B}
-.home-watermark{position:absolute;right:-180px;top:120px;width:min(1100px,90vw);height:auto;color:var(--h-fg);opacity:.045;pointer-events:none}
+.home-watermark{position:absolute;right:-60px;top:90px;width:min(900px,70vw);height:auto;opacity:.07;pointer-events:none;animation:gateFloat 9s ease-in-out infinite}
 .home-top{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:32px max(24px,5vw,env(safe-area-inset-right,0px)) 32px max(24px,5vw,env(safe-area-inset-left,0px))}
 .home-brand{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-.home-brand img{width:220px;height:auto;display:block}
+.home-brand img{width:230px;height:auto;display:block}
 .home-rule{width:1px;height:28px;background:#3A3A37}
 .home-unit{font-family:var(--display);font-stretch:112%;font-weight:700;font-size:12px;letter-spacing:.24em;color:var(--h-gold)}
 .home-clock{text-align:right;font-family:var(--mono)}
@@ -288,4 +279,33 @@ body:has(.home){background:#0B0B0B}
 .home a:focus-visible,.home button:focus-visible{outline:2px solid var(--h-gold);outline-offset:3px}
 @keyframes homeIn{from{opacity:.001;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (max-width:760px){.home-brand img{width:160px}.home-rule,.home-clock span{display:none}.home-stat{padding-left:14px}.home-n{font-size:30px}}
-@media (prefers-reduced-motion:reduce){.home-line{animation:none}}
+@media (prefers-reduced-motion:reduce){.home-line,.home-watermark{animation:none}}
+
+/* ---------- Sign in: "The Gate" — always dark, Pegasus in flight ---------- */
+.gate{--g-bg:#060606;--g-fg:#F2F2EF;--g-dim:#8F8F88;--g-line:#262624;--g-gold:#C9A766;--g-gold-hi:#E3C88F;
+  position:relative;min-height:100vh;box-sizing:border-box;background:radial-gradient(55% 65% at 26% 55%,rgba(201,167,102,.13),rgba(201,167,102,.04) 45%,transparent 75%),var(--g-bg);color:var(--g-fg);overflow:hidden;display:flex;flex-direction:column;color-scheme:dark;
+  padding-left:max(24px,5vw,env(safe-area-inset-left,0px));padding-right:max(24px,5vw,env(safe-area-inset-right,0px))}
+body:has(.gate){background:#060606}
+.gate-top{position:relative;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:30px}
+.gate-top img{width:200px;height:auto;display:block}
+.gate-unit{font-family:var(--display);font-stretch:112%;font-weight:700;font-size:11.5px;letter-spacing:.26em;color:var(--g-gold);padding-left:16px;border-left:1px solid #3A3A37}
+.gate-stage{position:relative;flex:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:40px;padding-bottom:48px}
+.gate-art{flex:999 1 460px;min-width:0;display:flex;flex-direction:column;gap:18px;max-width:720px}
+.gate-pegasus{width:min(640px,100%);height:auto;display:block;filter:drop-shadow(0 30px 60px rgba(0,0,0,.6));animation:gateFloat 7s ease-in-out infinite}
+.gate-motto{margin:0;font-family:var(--display);font-stretch:112%;font-weight:800;font-size:clamp(26px,3.4vw,46px);line-height:1.05;letter-spacing:-.005em}
+.gate-card{flex:1 1 340px;max-width:400px;display:flex;flex-direction:column;gap:16px;background:rgba(255,255,255,.03);border:1px solid var(--g-line);border-top:2px solid var(--g-gold);border-radius:10px;padding:28px;backdrop-filter:blur(6px)}
+.gate-eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--g-dim);margin-bottom:6px}
+.gate h1{margin:0;font-family:var(--display);font-stretch:112%;font-weight:800;font-size:30px}
+.gate-field{display:flex;flex-direction:column;gap:6px}
+.gate-field label{font-size:12px;color:var(--g-dim);letter-spacing:.04em}
+.gate-field input{background:#0F0F0E;border:1px solid #33332F;border-radius:7px;color:var(--g-fg);padding:12px 13px;font-size:15px}
+.gate-field input:focus{outline:none;border-color:var(--g-gold);box-shadow:0 0 0 3px rgba(201,167,102,.18)}
+.gate-btn{min-height:50px;border:0;border-radius:8px;background:var(--g-gold);color:#111;font-weight:700;font-size:15px;letter-spacing:.02em;margin-top:4px}
+.gate-btn:hover{background:var(--g-gold-hi)}
+.gate-btn:disabled{opacity:.6}
+.gate-btn:focus-visible{outline:2px solid var(--g-gold-hi);outline-offset:3px}
+.gate-err{border:1px solid #6B2A25;background:#2A1311;color:#F2A49B;border-radius:7px;padding:10px 12px;font-size:13.5px}
+.gate-hint{margin:0;font-size:12px;color:#6E6E68}
+@keyframes gateFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@media (max-width:760px){.gate-top img{width:150px}.gate-stage{gap:20px}.gate-pegasus{width:min(320px,80%)}.gate-card{max-width:none;padding:22px}}
+@media (prefers-reduced-motion:reduce){.gate-pegasus{animation:none}}

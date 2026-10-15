@@ -49,7 +49,7 @@ export default function Settings() {
             <input id="home-name" type="text" value={name} onChange={e => setName(e.target.value)} maxLength={40} style={{ minWidth: 0 }} />
             <button className="btn sm">Save</button>
           </form>
-          <p className="hint">Shows as “Good morning, {name.trim() || 'Savage'}.” Under it: “Lock in. The ship doesn’t steer itself.”</p>
+          <p className="hint">Shows as “Good morning, {name.trim() || 'Savage'}.” The line under it changes every time you open the page.</p>
         </section>
         <section className="panel">
           <div className="panel-h"><h2 className="sec">Appearance</h2></div>

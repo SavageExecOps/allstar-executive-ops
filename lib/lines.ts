@@ -1,5 +1,5 @@
-// The home page line. The first one is the signature line and shows by default.
-// "Another one" on the home page cycles through the rest. Add or edit freely.
+// The home page line. A different one shows every time the page loads
+// (never the same one twice in a row). Add, remove or edit freely.
 export const HOME_LINES = [
   'Lock in. The ship doesn’t steer itself.',
   'Hands on the wheel. Eyes on the horizon.',

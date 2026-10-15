@@ -8,7 +8,7 @@ Private executive operations command center for the Executive Assistant to Wylie
 
 | Area | What works |
 |---|---|
-| Home (“The Bridge”) | Landing page after sign-in: Central Time greeting with your chosen name (Settings → Home page), the signature line “Lock in. The ship doesn’t steer itself.” (more in `lib/lines.ts`), live counts for due today / waiting / overdue, and a jump into the Command Center or My Day |
+| Home (“The Bridge”) | Landing page after sign-in: Central Time greeting with your chosen name (Settings → Home page), a fresh captain’s line on every visit from `lib/lines.ts`, live counts for due today / waiting / overdue, and a jump into the Command Center or My Day |
 | Command Center | Five-question strip (today, overdue/urgent, waiting on, coming up, done), top three, due & overdue, needs-a-date, waiting-on summary, operational status by department, quick actions |
 | My Day | Central Time blocks with live "now", per-block timers, mark done, progress, protected breaks, editable blocks (time, name, which departments' tasks appear), interruptions log, move unfinished to tomorrow |
 | Tasks | Today / Tomorrow / This week / Overdue / No date / Waiting / Needs confirmation / All / Completed, department filter, full editor, activity history, weekly recurrence rolls forward on completion |

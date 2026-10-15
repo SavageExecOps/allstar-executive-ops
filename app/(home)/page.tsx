@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useData } from '@/components/DataProvider';
-import { AllstarMark } from '@/components/Logo';
 import { HOME_LINES } from '@/lib/lines';
 import { metrics } from '@/lib/tasks';
 import { ctNow, fmtDate, TZ } from '@/lib/time';
@@ -11,12 +10,20 @@ import { ctNow, fmtDate, TZ } from '@/lib/time';
 export default function Home() {
   const { ready, tasks, homeName, error } = useData();
   const [now, setNow] = useState<Date | null>(null);
-  const [bump, setBump] = useState(0);
+  const [lineIdx, setLineIdx] = useState<number | null>(null);
   useEffect(() => { setNow(new Date()); const i = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(i); }, []);
+  // A fresh line on every visit, never the same one twice in a row.
+  useEffect(() => {
+    let last = -1;
+    try { last = Number(localStorage.getItem('aeo.lastLine') ?? -1); } catch { /* storage unavailable */ }
+    let i = Math.floor(Math.random() * HOME_LINES.length);
+    if (HOME_LINES.length > 1 && i === last) i = (i + 1) % HOME_LINES.length;
+    setLineIdx(i);
+    try { localStorage.setItem('aeo.lastLine', String(i)); } catch { /* ignore */ }
+  }, []);
 
   const p = ctNow(now ?? new Date());
   const greeting = p.h < 12 ? 'Good morning' : p.h < 17 ? 'Good afternoon' : 'Good evening';
-  const line = HOME_LINES[bump % HOME_LINES.length];
   const m = metrics(tasks);
   const stats: [number, string, string][] = [
     [m.today.length, 'due today', '/tasks?view=today'],
@@ -26,11 +33,12 @@ export default function Home() {
 
   return (
     <div className="home">
-      <AllstarMark className="home-watermark" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="home-watermark" src="/allstar-pegasus-white.png" alt="" aria-hidden="true" width={601} height={534} />
       <header className="home-top">
         <div className="home-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/allstar-lockup-white.png" alt="ALL-STAR" width={220} height={40} />
+          <img src="/allstar-lockup-pegasus-white.png" alt="ALL-STAR" width={230} height={77} />
           <span className="home-rule" aria-hidden="true" />
           <span className="home-unit">EXECUTIVE OPS</span>
         </div>
@@ -44,10 +52,7 @@ export default function Home() {
         <div className="home-hero">
           <div className="home-date">{fmtDate(p.iso, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
           <h1>{greeting},<br />{homeName}.</h1>
-          <div className="home-line-row">
-            <p className="home-line" key={bump}>{line}</p>
-            <button type="button" className="home-another" onClick={() => setBump(b => b + 1)}>Another one</button>
-          </div>
+          <p className="home-line">{lineIdx === null ? '\u00a0' : HOME_LINES[lineIdx]}</p>
         </div>
 
         {error ? <p className="home-err">{error}</p> : (

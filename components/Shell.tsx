@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { DataProvider, useData } from './DataProvider';
 import { UICtx, useUI, type QuickKind } from './UI';
-import { AllstarMark } from './Logo';
 import { Icon, NAV } from './nav';
 import { BlockEditor, ProjectDrawer, QuickAdd, TaskDrawer } from './Overlays';
 import { isOpen, isWaiting } from '@/lib/tasks';
@@ -68,7 +67,8 @@ function ShellInner({ children }: { children: ReactNode }) {
     <UICtx.Provider value={ui}>
       <div className={`app ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mopen' : ''}`}>
         <aside className="rail" aria-label="Main navigation">
-          <Link href="/" className="brand" title="Home" style={{ color: 'inherit', textDecoration: 'none' }}><AllstarMark /><div className="wm">ALLSTAR<small>EXECUTIVE OPS</small></div></Link>
+          <Link href="/" className="brand" title="Home" style={{ color: 'inherit', textDecoration: 'none' }}>{/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/allstar-pegasus-white.png" alt="" aria-hidden="true" width={44} height={39} /><div className="wm">ALL-STAR<small>EXECUTIVE OPS</small></div></Link>
           <nav className="nav">
             {NAV.map((n, i) => 'group' in n
               ? <div key={i} className="nav-group-h">{n.group}</div>

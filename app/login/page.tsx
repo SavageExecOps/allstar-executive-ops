@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { AllstarMark } from '@/components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,19 +22,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login">
-      <div className="login-art">
-        <AllstarMark />
-        <div><h2>ALLSTAR</h2><p>Executive Ops</p></div>
-      </div>
-      <div className="login-form">
-        <form onSubmit={onSubmit}>
-          <div><div className="eyebrow">Private workspace</div><h1 style={{ fontFamily: 'var(--display)', fontStretch: '112%', fontWeight: 800, margin: 0, fontSize: 28 }}>Sign in</h1></div>
-          {error && <div className="err" role="alert">{error}</div>}
-          <div className="field"><label htmlFor="email">Email</label><input id="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} /></div>
-          <div className="field"><label htmlFor="password">Password</label><input id="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></div>
-          <button className="btn primary" disabled={busy} style={{ justifyContent: 'center', padding: '10px 12px' }}>{busy ? 'Signing in…' : 'Sign in'}</button>
-          <p className="hint">Accounts are created by the workspace owner in Supabase. There is no public sign-up.</p>
+    <div className="gate">
+      <header className="gate-top">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/allstar-wordmark-white.png" alt="ALL-STAR" width={200} height={37} />
+        <span className="gate-unit">EXECUTIVE OPS</span>
+      </header>
+
+      <div className="gate-stage">
+        <div className="gate-art">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="gate-pegasus" src="/allstar-pegasus-white.png" alt="" aria-hidden="true" width={601} height={534} />
+          <p className="gate-motto">Authorized crew only.</p>
+        </div>
+
+        <form className="gate-card" onSubmit={onSubmit}>
+          <div>
+            <div className="gate-eyebrow">Private workspace</div>
+            <h1>Sign in</h1>
+          </div>
+          {error && <div className="gate-err" role="alert">{error}</div>}
+          <div className="gate-field">
+            <label htmlFor="email">Email</label>
+            <input id="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} />
+          </div>
+          <div className="gate-field">
+            <label htmlFor="password">Password</label>
+            <input id="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} />
+          </div>
+          <button className="gate-btn" disabled={busy}>{busy ? 'Signing in…' : 'Take the wheel'}</button>
+          <p className="gate-hint">No public sign-up. Accounts are created by the workspace owner.</p>
         </form>
       </div>
     </div>
