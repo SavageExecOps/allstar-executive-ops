@@ -95,8 +95,8 @@ function send(payload) {
 /** "Mark Sharkozy Interview with Allstar" → "Mark Sharkozy"; also "Call with Jane Doe" (best effort). */
 function nameFromTitle(title) {
   title = title || '';
-  var m = /^(.+?)\s+(?:interview|call|meeting)\b/i.exec(title)
-       || /(?:with|w\/)\s+([A-Z][\w'.-]+(?:\s+[A-Z][\w'.-]+)+)/.exec(title);
+  var m = /(?:with|w\/)\s+([A-Z][\w'.-]+(?:\s+[A-Z][\w'.-]+)+)/.exec(title)
+       || /^(.+?)\s+(?:interview|call|meeting)\b/i.exec(title);
   return m ? m[1].trim() : '';
 }
 function phoneFrom(text) {
