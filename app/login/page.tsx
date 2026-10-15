@@ -21,26 +21,27 @@ export default function LoginPage() {
     router.refresh();
   }
 
+  // Same stage as the home page: Pegasus in the background, ALL-STAR top left.
   return (
-    <div className="gate">
-      <header className="gate-top">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/allstar-wordmark-white.png" alt="ALL-STAR" width={200} height={37} />
-        <span className="gate-unit">EXECUTIVE OPS</span>
+    <div className="home">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="home-watermark" src="/allstar-pegasus-white.png" alt="" aria-hidden="true" width={601} height={534} />
+      <header className="home-top">
+        <div className="home-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/allstar-lockup-pegasus-white.png" alt="ALL-STAR" width={230} height={77} />
+          <span className="home-rule" aria-hidden="true" />
+          <span className="home-unit">EXECUTIVE OPS</span>
+        </div>
       </header>
 
-      <div className="gate-stage">
-        <div className="gate-art">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="gate-pegasus" src="/allstar-pegasus-white.png" alt="" aria-hidden="true" width={601} height={534} />
-          <p className="gate-motto">Authorized crew only.</p>
+      <main className="home-main">
+        <div className="home-hero">
+          <div className="home-date">Private workspace</div>
+          <h1>Authorized<br />crew only.</h1>
         </div>
 
-        <form className="gate-card" onSubmit={onSubmit}>
-          <div>
-            <div className="gate-eyebrow">Private workspace</div>
-            <h1>Sign in</h1>
-          </div>
+        <form className="gate-form" onSubmit={onSubmit}>
           {error && <div className="gate-err" role="alert">{error}</div>}
           <div className="gate-field">
             <label htmlFor="email">Email</label>
@@ -50,10 +51,15 @@ export default function LoginPage() {
             <label htmlFor="password">Password</label>
             <input id="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} />
           </div>
-          <button className="gate-btn" disabled={busy}>{busy ? 'Signing in…' : 'Take the wheel'}</button>
+          <div className="home-ctas">
+            <button className="home-cta" disabled={busy}>
+              {busy ? 'Boarding…' : 'Come aboard'}
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </button>
+          </div>
           <p className="gate-hint">No public sign-up. Accounts are created by the workspace owner.</p>
         </form>
-      </div>
+      </main>
     </div>
   );
 }

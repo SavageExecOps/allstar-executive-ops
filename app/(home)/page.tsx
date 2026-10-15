@@ -68,7 +68,7 @@ export default function Home() {
 
         <div className="home-ctas">
           <Link href="/command" className="home-cta">
-            Take the wheel
+            Set sail
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
           </Link>
           <Link href="/my-day" className="home-ghost">Open My Day</Link>

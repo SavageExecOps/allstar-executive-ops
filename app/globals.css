@@ -281,31 +281,14 @@ body:has(.home){background:#0B0B0B}
 @media (max-width:760px){.home-brand img{width:160px}.home-rule,.home-clock span{display:none}.home-stat{padding-left:14px}.home-n{font-size:30px}}
 @media (prefers-reduced-motion:reduce){.home-line,.home-watermark{animation:none}}
 
-/* ---------- Sign in: "The Gate" — always dark, Pegasus in flight ---------- */
-.gate{--g-bg:#060606;--g-fg:#F2F2EF;--g-dim:#8F8F88;--g-line:#262624;--g-gold:#C9A766;--g-gold-hi:#E3C88F;
-  position:relative;min-height:100vh;box-sizing:border-box;background:radial-gradient(55% 65% at 26% 55%,rgba(201,167,102,.13),rgba(201,167,102,.04) 45%,transparent 75%),var(--g-bg);color:var(--g-fg);overflow:hidden;display:flex;flex-direction:column;color-scheme:dark;
-  padding-left:max(24px,5vw,env(safe-area-inset-left,0px));padding-right:max(24px,5vw,env(safe-area-inset-right,0px))}
-body:has(.gate){background:#060606}
-.gate-top{position:relative;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:30px}
-.gate-top img{width:200px;height:auto;display:block}
-.gate-unit{font-family:var(--display);font-stretch:112%;font-weight:700;font-size:11.5px;letter-spacing:.26em;color:var(--g-gold);padding-left:16px;border-left:1px solid #3A3A37}
-.gate-stage{position:relative;flex:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:40px;padding-bottom:48px}
-.gate-art{flex:999 1 460px;min-width:0;display:flex;flex-direction:column;gap:18px;max-width:720px}
-.gate-pegasus{width:min(640px,100%);height:auto;display:block;filter:drop-shadow(0 30px 60px rgba(0,0,0,.6));animation:gateFloat 7s ease-in-out infinite}
-.gate-motto{margin:0;font-family:var(--display);font-stretch:112%;font-weight:800;font-size:clamp(26px,3.4vw,46px);line-height:1.05;letter-spacing:-.005em}
-.gate-card{flex:1 1 340px;max-width:400px;display:flex;flex-direction:column;gap:16px;background:rgba(255,255,255,.03);border:1px solid var(--g-line);border-top:2px solid var(--g-gold);border-radius:10px;padding:28px;backdrop-filter:blur(6px)}
-.gate-eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--g-dim);margin-bottom:6px}
-.gate h1{margin:0;font-family:var(--display);font-stretch:112%;font-weight:800;font-size:30px}
+/* ---------- Sign in: same stage as Home ---------- */
+.gate-form{display:flex;flex-direction:column;gap:14px;width:min(420px,100%)}
 .gate-field{display:flex;flex-direction:column;gap:6px}
-.gate-field label{font-size:12px;color:var(--g-dim);letter-spacing:.04em}
-.gate-field input{background:#0F0F0E;border:1px solid #33332F;border-radius:7px;color:var(--g-fg);padding:12px 13px;font-size:15px}
-.gate-field input:focus{outline:none;border-color:var(--g-gold);box-shadow:0 0 0 3px rgba(201,167,102,.18)}
-.gate-btn{min-height:50px;border:0;border-radius:8px;background:var(--g-gold);color:#111;font-weight:700;font-size:15px;letter-spacing:.02em;margin-top:4px}
-.gate-btn:hover{background:var(--g-gold-hi)}
-.gate-btn:disabled{opacity:.6}
-.gate-btn:focus-visible{outline:2px solid var(--g-gold-hi);outline-offset:3px}
-.gate-err{border:1px solid #6B2A25;background:#2A1311;color:#F2A49B;border-radius:7px;padding:10px 12px;font-size:13.5px}
+.gate-field label{font-size:12px;color:#8F8F88;letter-spacing:.04em}
+.gate-field input{background:#141413;border:1px solid #33332F;border-radius:8px;color:#F2F2EF;padding:13px 14px;font-size:15px}
+.gate-field input:focus{outline:none;border-color:#C9A766;box-shadow:0 0 0 3px rgba(201,167,102,.18)}
+.gate-err{border:1px solid #6B2A25;background:#2A1311;color:#F2A49B;border-radius:8px;padding:10px 12px;font-size:13.5px}
 .gate-hint{margin:0;font-size:12px;color:#6E6E68}
+.home-cta{border:0;cursor:pointer;font-family:inherit}
+.home-cta:disabled{opacity:.6;cursor:default}
 @keyframes gateFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-@media (max-width:760px){.gate-top img{width:150px}.gate-stage{gap:20px}.gate-pegasus{width:min(320px,80%)}.gate-card{max-width:none;padding:22px}}
-@media (prefers-reduced-motion:reduce){.gate-pegasus{animation:none}}
