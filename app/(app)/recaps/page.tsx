@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useData } from '@/components/DataProvider';
+import { useOps } from '@/components/OpsData';
+import { dayOf, today } from '@/lib/time';
 import { buildRecap } from '@/lib/tasks';
 import { fmtDate } from '@/lib/time';
 
@@ -10,7 +12,17 @@ type Mode = 'executive' | 'detailed';
 export default function Recaps() {
   const { tasks, interruptions, recaps, saveRecap, toast } = useData();
   const [mode, setMode] = useState<Mode>('executive');
-  const built = useMemo(() => buildRecap(tasks, interruptions), [tasks, interruptions]);
+  const ops = useOps();
+  const built = useMemo(() => {
+    const t = today();
+    return buildRecap(tasks, interruptions, {
+      agenda: ops.agenda.filter(a => a.status === 'Open').map(a => a.topic),
+      assignedToday: ops.assignments.filter(a => dayOf(a.assigned_at) === t).map(a => ({
+        recruit: ops.recruits.find(r => r.id === a.recruit_id)?.name ?? 'Recruit',
+        manager: ops.managers.find(m => m.id === a.manager_id)?.name ?? 'Manager' })),
+      handedOffToday: ops.recruits.filter(r => r.handed_off_at && dayOf(r.handed_off_at) === t).length,
+    });
+  }, [tasks, interruptions, ops.agenda, ops.assignments, ops.recruits, ops.managers]);
   const [text, setText] = useState(built[mode]);
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { setText(built[mode]); }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps

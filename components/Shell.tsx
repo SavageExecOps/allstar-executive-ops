@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { DataProvider, useData } from './DataProvider';
+import { OpsProvider, useOps } from './OpsData';
 import { UICtx, useUI, type QuickKind } from './UI';
 import { Icon, NAV } from './nav';
 import { BlockEditor, ProjectDrawer, QuickAdd, TaskDrawer } from './Overlays';
@@ -13,7 +14,7 @@ import { TZ } from '@/lib/time';
 type Layer = { kind: 'task' | 'project' | 'block'; id: string } | { kind: 'quick'; q: QuickKind } | null;
 
 export function Shell({ children }: { children: ReactNode }) {
-  return <DataProvider><ShellInner>{children}</ShellInner></DataProvider>;
+  return <DataProvider><OpsProvider><ShellInner>{children}</ShellInner></OpsProvider></DataProvider>;
 }
 
 function ShellInner({ children }: { children: ReactNode }) {
@@ -48,7 +49,9 @@ function ShellInner({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', h);
   }, [layer, ui]);
 
-  const counts = { open: data.tasks.filter(isOpen).length, waiting: data.tasks.filter(isWaiting).length };
+  const ops = useOps();
+  const counts = { open: data.tasks.filter(isOpen).length, waiting: data.tasks.filter(isWaiting).length,
+    recruits: ops.recruits.filter(r => r.status === 'Call Completed').length, wylie: ops.agenda.filter(a => a.status === 'Open').length };
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   function toggleRail() {

@@ -4,6 +4,7 @@ const P: Record<string, JSX.Element> = {
   task: <><path d="M9 11l3 3 8-8" /><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" /></>,
   wait: <path d="M6 2h12M6 22h12M7 2c0 6 10 6 10 10S7 16 7 22M17 2c0 6-10 6-10 10s10 4 10 10" />,
   proj: <path d="M3 7h18v13H3zM8 7V4h8v3" />,
+  flag: <path d="M5 21V4M5 4h11l-2 4 2 4H5" />,
   note: <><path d="M5 3h10l4 4v14H5z" /><path d="M14 3v5h5" /></>,
   recap: <path d="M4 6h16M4 12h10M4 18h7" />,
   rec: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2 .6 3.2 2.6 3.5 5.5" /></>,
@@ -19,7 +20,7 @@ const P: Record<string, JSX.Element> = {
 };
 export const Icon = ({ name }: { name: string }) => <svg viewBox="0 0 24 24" aria-hidden="true">{P[name]}</svg>;
 
-export type NavItem = { group: string } | { href: string; label: string; icon: string; phase?: 2 | 3; count?: 'open' | 'waiting' };
+export type NavItem = { group: string } | { href: string; label: string; icon: string; phase?: 2 | 3; count?: 'open' | 'waiting' | 'recruits' | 'wylie' };
 
 export const NAV: NavItem[] = [
   { group: 'Today' },
@@ -27,12 +28,13 @@ export const NAV: NavItem[] = [
   { href: '/my-day', label: 'My Day', icon: 'day' },
   { href: '/tasks', label: 'Tasks & Follow-ups', icon: 'task', count: 'open' },
   { href: '/waiting', label: 'Waiting On', icon: 'wait', count: 'waiting' },
+  { href: '/wylie', label: 'For Wylie', icon: 'flag', count: 'wylie' },
   { group: 'Work' },
   { href: '/projects', label: 'Projects', icon: 'proj' },
   { href: '/notes', label: 'Notes & Preferences', icon: 'note' },
   { href: '/recaps', label: 'Daily Recaps', icon: 'recap' },
   { group: 'Operations' },
-  { href: '/m/recruiting', label: 'Recruiting', icon: 'rec', phase: 2 },
+  { href: '/recruiting', label: 'Recruiting', icon: 'rec', count: 'recruits' },
   { href: '/m/calendar', label: 'Wylie’s Calendar', icon: 'cal', phase: 2 },
   { href: '/m/finance', label: 'Finance & Bookkeeping', icon: 'fin', phase: 2 },
   { href: '/m/debt', label: 'Debt Management', icon: 'debt', phase: 2 },
@@ -46,11 +48,6 @@ export const NAV: NavItem[] = [
 ];
 
 export const MODULE_SCOPE: Record<string, { title: string; phase: 2 | 3; items: string[] }> = {
-  recruiting: { title: 'Recruiting', phase: 2, items: [
-    'Recruit records and the New → Scheduled → Call Completed → Manager Assigned → Group Chat Created → Handed Off pipeline',
-    'Manager directory (~6, editable) with load balancing and one-click assignment',
-    'Copy-ready group chat introduction messages',
-    'Weekly availability builder, starting from the proposed Thu/Fri-heavy schedule already stored in your database'] },
   calendar: { title: 'Wylie’s Calendar', phase: 2, items: [
     'Scheduling request queue: Requested → Awaiting Availability → Proposed → Confirmed → Completed',
     'Direct-report directory and meeting priorities',

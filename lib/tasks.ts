@@ -57,7 +57,9 @@ export function filterView(tasks: Task[], view: TaskView): Task[] {
 const lc = (s: string) => /^[A-Z][a-z]/.test(s) && !/^(Wylie|Jonathan|KPA|ATM|QuickBooks|Venmo)\b/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
 
 /** Recaps are built only from stored records. Nothing is invented. */
-export function buildRecap(tasks: Task[], interruptions: { body: string }[]) {
+export interface RecapExtras { agenda?: string[]; assignedToday?: { recruit: string; manager: string }[]; handedOffToday?: number }
+
+export function buildRecap(tasks: Task[], interruptions: { body: string }[], extras: RecapExtras = {}) {
   const m = metrics(tasks);
   const t = today();
   const tomorrow = sortTasks(m.open.filter(x => !x.due_date || x.due_date <= addDays(t, 1))).slice(0, 3);
@@ -70,7 +72,8 @@ export function buildRecap(tasks: Task[], interruptions: { body: string }[]) {
     `\nCOMPLETED TODAY (${m.doneToday.length})\n${bullets(m.doneToday) || '• Nothing marked complete'}`,
     `\nOVERDUE (${m.overdue.length})\n${m.overdue.map(x => `• ${x.title} (due ${relDate(x.due_date)})`).join('\n') || '• None'}`,
     `\nWAITING ON OTHERS (${m.waiting.length})\n${m.waiting.map(x => `• ${x.waiting_on || 'Someone'}: ${x.title}${x.follow_up_date ? ` · follow up ${relDate(x.follow_up_date)}` : ''}`).join('\n') || '• None'}`,
-    `\nDECISIONS NEEDED FROM WYLIE\n${bullets(wylie) || '• None'}`,
+    `\nDECISIONS NEEDED FROM WYLIE\n${[...(extras.agenda ?? []).map(a => '• ' + a), bullets(wylie)].filter(Boolean).join('\n') || '• None'}`,
+    extras.assignedToday?.length || extras.handedOffToday ? `\nRECRUITING\n${(extras.assignedToday ?? []).map(a => `• ${a.recruit} → ${a.manager}`).join('\n')}${extras.handedOffToday ? `\n• ${extras.handedOffToday} handed off` : ''}`.replace('\n\n', '\n') : '',
     interruptions.length ? `\nINTERRUPTIONS\n${interruptions.map(i => '• ' + i.body).join('\n')}` : '',
     `\nOPEN TASKS: ${m.open.length} · Missing info on ${m.needsConfirmation.length}`,
     `\nTOMORROW'S TOP THREE\n${tomorrow.map((x, i) => `${i + 1}. ${x.title}`).join('\n') || '• Nothing open'}`,
@@ -80,6 +83,8 @@ export function buildRecap(tasks: Task[], interruptions: { body: string }[]) {
     `Hey Wylie, quick update for ${fmtDate(t, { weekday: 'long' })}.`,
     m.doneToday.length ? `\nDone today: ${m.doneToday.map(x => lc(x.title)).join('; ')}.` : '\nNo items closed out today.',
     wylie.length ? `\nNeed from you: ${wylie.map(x => lc(x.title.replace(/^Follow up with Wylie to /i, ''))).join('; ')}.` : '',
+    extras.assignedToday?.length ? `\nRecruiting: ${extras.assignedToday.length} paired with managers today${extras.handedOffToday ? `, ${extras.handedOffToday} handed off` : ''}.` : '',
+    extras.agenda?.length ? `\nFor our next one-on-one: ${extras.agenda.map(lc).join('; ')}.` : '',
     others.length ? `\nStill waiting on ${Array.from(new Set(others.map(x => x.waiting_on || 'others'))).join(', ')}.` : '',
     tomorrow.length ? `\nTomorrow I'm focused on: ${tomorrow.map(x => lc(x.title)).join('; ')}.` : '',
   ].filter(Boolean).join('\n');

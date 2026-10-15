@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useData } from '@/components/DataProvider';
 import { TaskList } from '@/components/TaskList';
 import { useUI } from '@/components/UI';
+import { useOps } from '@/components/OpsData';
 import { isOpen, metrics, sortTasks, waitingOnWylie } from '@/lib/tasks';
 import { ctNow, fmt12, fmtDate, minutesNow, relDate, toMin } from '@/lib/time';
 
 export default function CommandCenter() {
   const { tasks, blocks } = useData();
   const { quickAdd, openTask } = useUI();
+  const ops = useOps();
   const m = metrics(tasks);
   const p = ctNow();
   const greet = p.h < 12 ? 'Good morning' : p.h < 17 ? 'Good afternoon' : 'Good evening';
@@ -19,14 +21,14 @@ export default function CommandCenter() {
   const dueNow = sortTasks([...m.overdue, ...m.today]);
   const dept = (d: string) => tasks.filter(t => isOpen(t) && t.department === d).length;
   const status: [string, number, string][] = [
-    ['Waiting on Wylie', m.waiting.filter(waitingOnWylie).length, '/waiting'],
+    ['To go over with Wylie', ops.agenda.filter(a => a.status === 'Open').length + m.waiting.filter(waitingOnWylie).length, '/wylie'],
+    ['Recruits need a manager', ops.recruits.filter(r => r.status === 'Call Completed').length, '/recruiting'],
     ['Needs confirmation', m.needsConfirmation.length, '/tasks?view=confirm'],
     ['Open finance items', dept('Finance'), '/tasks?view=all&dept=Finance'],
     ['Debt follow-ups', dept('Debt'), '/tasks?view=all&dept=Debt'],
     ['Lead items', dept('Leads'), '/tasks?view=all&dept=Leads'],
     ['Advertising items', dept('Advertising'), '/tasks?view=all&dept=Advertising'],
     ['Office items', dept('Office'), '/tasks?view=all&dept=Office'],
-    ['Recruiting items', dept('Recruiting'), '/tasks?view=all&dept=Recruiting'],
   ];
   const recent = m.done.slice().sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? '')).slice(0, 4);
 
@@ -74,6 +76,7 @@ export default function CommandCenter() {
               <button className="btn sm" onClick={() => quickAdd('task')}>Add task</button>
               <button className="btn sm" onClick={() => quickAdd('followup')}>Add follow-up</button>
               <button className="btn sm" onClick={() => quickAdd('note')}>Add note</button>
+              <button className="btn sm" onClick={() => quickAdd('wylie')}>For Wylie</button>
               <button className="btn sm" onClick={() => quickAdd('interrupt')}>Log interruption</button>
               <Link className="btn sm" href="/projects">Update project</Link>
               <Link className="btn sm" href="/recaps">Generate recap</Link>
@@ -97,7 +100,7 @@ export default function CommandCenter() {
             <div className="status">
               {status.map(([l, v, href]) => <Link key={l} href={href} className="statcell"><span>{l}</span><span className={`sv ${v ? 'has' : ''}`}>{v}</span></Link>)}
             </div>
-            <p className="hint">Recruiting calls, invoices, debt balances and lead counts get their own live numbers when those modules land in Phase 2.</p>
+            <p className="hint">Invoices, debt balances and lead counts get live numbers as their modules are built.</p>
           </section>
           <section className="panel">
             <div className="panel-h"><h2 className="sec">Recently completed</h2></div>

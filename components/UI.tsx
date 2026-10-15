@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from 'react';
 
-export type QuickKind = 'task' | 'followup' | 'note' | 'interrupt' | 'project';
+export type QuickKind = 'task' | 'followup' | 'note' | 'interrupt' | 'project' | 'wylie';
 
 export interface UIApi {
   openTask: (id: string) => void;

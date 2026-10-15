@@ -16,6 +16,8 @@ Private executive operations command center for the Executive Assistant to Wylie
 | Projects | Status, priority, next action, dependencies, deadline, linked tasks, update log |
 | Notes & Preferences | Typed notes with pinning; Wylie's preferences split into permanent vs. temporary rules |
 | Daily Recap | Generated only from stored records; short update for Wylie and detailed internal version; edit, copy, save, history |
+| Recruiting | Two-stack pipeline (Booked → Talked → Assigned → In group chat → Handed off, plus Didn’t connect); round-robin “up next” = in-rotation manager longest without a recruit; override with a logged reason (location, vibe, age 30+); 30+ suggests Dom; call notes per recruit; copy-ready group chat intro; manager roster with rotation toggles and counts |
+| For Wylie | Running one-on-one list with priority, mark discussed + outcome, copy the list; tasks waiting on Wylie alongside; feeds the daily recap |
 | Search, quick add | `/` focuses search across tasks, projects, notes and preferences; `N` opens quick add anywhere |
 
 Phase 2 and 3 modules (Recruiting, Calendar, Finance, Debt, Leads, Advertising, Office, Communications, AI Assistant) appear in the sidebar with their planned scope. **Their tables already exist** (see `supabase/migrations/0001_schema.sql`) and some are seeded (proposed recruiting availability, Jonathan's debt record, accounts needing reconnection, two lead groups), so building those screens won't require moving data.
@@ -53,6 +55,7 @@ npm run typecheck
 - `supabase/migrations/0002_security.sql`: RLS, profile trigger
 - `supabase/migrations/0003_seed.sql`: `seed_starting_items()`, called once by the app on first sign-in
 - `supabase/migrations/0004_home.sql`: the home page name
+- `supabase/migrations/0005_recruiting.sql`: recruiting fields, recruit notes, For Wylie list, starting manager roster
 - `supabase/setup.sql`: all of the above combined, for pasting into the SQL Editor
 
 ## Roadmap

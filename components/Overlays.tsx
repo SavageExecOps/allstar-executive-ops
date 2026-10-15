@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useData } from './DataProvider';
+import { useOps } from './OpsData';
 import type { QuickKind } from './UI';
 import { DEPARTMENTS, NOTE_TYPES, PRIORITIES, PROJECT_STATUSES, TASK_STATUSES, type Task, type TaskActivity } from '@/lib/types';
 import { addDays, fmtStamp, today, toMin } from '@/lib/time';
@@ -114,10 +115,12 @@ const QA_LABELS: Record<QuickKind, [string, string]> = {
   note: ['Add a note', 'Anything worth remembering'],
   interrupt: ['Log an interruption', 'e.g. Wylie needs flight changed today'],
   project: ['New project', 'Project name'],
+  wylie: ['Add to the For Wylie list', 'What do you need to go over with Wylie?'],
 };
 
 export function QuickAdd({ kind, onClose }: { kind: QuickKind; onClose: () => void }) {
   const { createTask, createNote, createProject, createPreference, addInterruption, toast } = useData();
+  const { addAgenda } = useOps();
   const [text, setText] = useState('');
   const [dept, setDept] = useState<string>(kind === 'interrupt' ? 'Executive' : 'Operations');
   const [pri, setPri] = useState<string>(kind === 'interrupt' ? 'High' : 'Normal');
@@ -142,13 +145,14 @@ export function QuickAdd({ kind, onClose }: { kind: QuickKind; onClose: () => vo
     else if (kind === 'interrupt') ok = await addInterruption(v, base);
     else if (kind === 'followup') ok = !!(await createTask({ title: v, status: 'Waiting', waiting_on: who.trim() || null, follow_up_date: fu || null, due_date: fu || null }));
     else if (kind === 'project') ok = !!(await createProject({ name: v }));
+    else if (kind === 'wylie') ok = await addAgenda({ topic: v });
     else if (kind === 'note') {
       ok = pref
         ? await createPreference({ body: v, permanence: pref as 'Permanent' | 'Temporary', category: pref === 'Temporary' ? 'Restriction' : 'Scheduling' })
         : await createNote({ body: v, note_type: noteType as never, department: dept === 'Operations' ? null : dept });
     }
     setBusy(false);
-    if (ok) { toast(kind === 'note' ? 'Note saved' : kind === 'project' ? 'Project created' : 'Added'); onClose(); }
+    if (ok) { toast(kind === 'note' ? 'Note saved' : kind === 'project' ? 'Project created' : kind === 'wylie' ? 'Added for Wylie' : 'Added'); onClose(); }
   }
 
   return (
