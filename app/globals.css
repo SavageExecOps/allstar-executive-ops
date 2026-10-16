@@ -248,7 +248,7 @@ body:has(.home){background:#0B0B0B}
 .home-watermark{position:absolute;right:-60px;top:90px;width:min(900px,70vw);height:auto;opacity:.07;pointer-events:none;animation:gateFloat 9s ease-in-out infinite}
 .home-top{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:32px max(24px,5vw,env(safe-area-inset-right,0px)) 32px max(24px,5vw,env(safe-area-inset-left,0px))}
 .home-brand{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-.home-brand img{width:230px;height:auto;display:block}
+.home-brand img{width:240px;height:auto;display:block}
 .home-rule{width:1px;height:28px;background:#3A3A37}
 .home-unit{font-family:var(--display);font-stretch:112%;font-weight:700;font-size:12px;letter-spacing:.24em;color:var(--h-gold)}
 .home-clock{text-align:right;font-family:var(--mono)}

@@ -29,7 +29,7 @@ export default function LoginPage() {
       <header className="home-top">
         <div className="home-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/allstar-lockup-pegasus-white.png" alt="ALL-STAR" width={230} height={77} />
+          <img src="/allstar-lockup-white.png" alt="ALL-STAR" width={240} height={44} />
           <span className="home-rule" aria-hidden="true" />
           <span className="home-unit">EXECUTIVE OPS</span>
         </div>
