@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useData } from '@/components/DataProvider';
 import { createClient } from '@/lib/supabase/client';
+import { hasWeekPlan, planRows } from '@/lib/weekPlan';
 
 type Theme = '' | 'light' | 'dark';
 
@@ -15,6 +16,7 @@ export default function Settings() {
   const [name, setName] = useState(data.homeName);
   const [intake, setIntake] = useState<boolean | null>(null);
   const [origin, setOrigin] = useState('');
+  const [confirmReset, setConfirmReset] = useState(false);
   useEffect(() => {
     setOrigin(window.location.origin);
     fetch('/api/intake/iclosed').then(r => r.json()).then(j => setIntake(!!j.configured)).catch(() => setIntake(false));
@@ -56,6 +58,18 @@ export default function Settings() {
             <button className="btn sm">Save</button>
           </form>
           <p className="hint">Shows as “Good morning, {name.trim() || 'Savage'}.” The line under it changes every time you open the page.</p>
+        </section>
+        <section className="panel">
+          <div className="panel-h"><h2 className="sec">Weekly schedule</h2>
+            <span className={`pill ${hasWeekPlan(data.blocks) ? 'ok' : 'conf'}`}>{hasWeekPlan(data.blocks) ? 'Game plan loaded' : 'Old schedule'}</span></div>
+          <p className="sub" style={{ margin: '0 0 10px' }}>9 to 6 Central. Recruiting blocks match iClosed, deep work rotates by day, Thursday 1:00 is the mandatory meeting. Edit any block from My Day.</p>
+          {confirmReset ? (
+            <div className="toolbar" style={{ margin: 0 }}>
+              <span className="hint" style={{ margin: 0 }}>This replaces every block, including your edits.</span>
+              <button className="btn sm primary" onClick={async () => { if (await data.replaceSchedule(planRows())) data.toast('Weekly game plan loaded'); setConfirmReset(false); }}>Replace</button>
+              <button className="btn sm ghost" onClick={() => setConfirmReset(false)}>Cancel</button>
+            </div>
+          ) : <button className="btn" onClick={() => setConfirmReset(true)}>{hasWeekPlan(data.blocks) ? 'Reset to the game plan' : 'Load the game plan'}</button>}
         </section>
         <section className="panel">
           <div className="panel-h"><h2 className="sec">Recruiting intake</h2>

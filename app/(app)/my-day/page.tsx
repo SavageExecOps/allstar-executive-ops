@@ -7,13 +7,16 @@ import { Check, DueTag, TaskList } from '@/components/TaskList';
 import { useUI } from '@/components/UI';
 import { isOpen, isOverdue, sortTasks } from '@/lib/tasks';
 import { ctNow, fmt12, fmtClock, fmtDate, fmtSecs, minutesNow, today, toMin, weekday } from '@/lib/time';
-import type { BlockLog } from '@/lib/types';
+import type { BlockLog, ScheduleBlock } from '@/lib/types';
+import { DAY_NAMES, hasWeekPlan, planRows } from '@/lib/weekPlan';
 
 const elapsed = (l?: BlockLog) =>
   (l?.seconds_tracked ?? 0) + (l?.running_since ? Math.floor((Date.now() - Date.parse(l.running_since)) / 1000) : 0);
 
 export default function MyDay() {
-  const { blocks, blockLogs, tasks, interruptions, setBlockLog, carryForward, toast } = useData();
+  const { blocks, blockLogs, tasks, interruptions, setBlockLog, carryForward, replaceSchedule, toast } = useData();
+  const [view, setView] = useState<'today' | 'week'>('today');
+  const [loading, setLoading] = useState(false);
   const { quickAdd, openTask, editBlock } = useUI();
   const [, tick] = useState(0);
   useEffect(() => { const i = setInterval(() => tick(x => x + 1), 1000); return () => clearInterval(i); }, []);
@@ -21,8 +24,17 @@ export default function MyDay() {
   const t = today();
   const wd = weekday(t);
   // A weekday-specific schedule wins over the everyday one when it exists.
-  const specific = blocks.filter(b => b.weekday === wd);
-  const day = (specific.length ? specific : blocks.filter(b => b.weekday === null)).sort((a, b) => a.start_time.localeCompare(b.start_time));
+  const blocksFor = (w: number): ScheduleBlock[] => {
+    const specific = blocks.filter(b => b.weekday === w);
+    return (specific.length ? specific : blocks.filter(b => b.weekday === null)).sort((a, b) => a.start_time.localeCompare(b.start_time));
+  };
+  const day = blocksFor(wd);
+  const planned = hasWeekPlan(blocks);
+  async function loadPlan() {
+    setLoading(true);
+    if (await replaceSchedule(planRows())) toast('Weekly game plan loaded');
+    setLoading(false);
+  }
   const work = day.filter(b => !b.is_protected);
   const logOf = (id: string) => blockLogs.find(l => l.block_id === id);
   const doneCount = work.filter(b => logOf(b.id)?.done).length;
@@ -61,10 +73,36 @@ export default function MyDay() {
         <div className="prog"><i style={{ width: `${pct}%` }} /></div>
         <span style={{ color: 'var(--fg3)', fontSize: 12.5 }}>Breaks protected</span>
       </div>
+      {!planned && (
+        <div className="plan-banner">
+          <div><b>Your weekly game plan is ready.</b> Recruiting blocks matched to iClosed, a deep-work focus for each day and Thursday’s 1:00 meeting. It replaces the current schedule.</div>
+          <button className="btn primary" disabled={loading} onClick={loadPlan}>{loading ? 'Loading…' : 'Load it'}</button>
+        </div>
+      )}
+      <div className="tabs" role="tablist">
+        <button role="tab" aria-selected={view === 'today'} className={view === 'today' ? 'on' : ''} onClick={() => setView('today')}>Today</button>
+        <button role="tab" aria-selected={view === 'week'} className={view === 'week' ? 'on' : ''} onClick={() => setView('week')}>Week</button>
+      </div>
+      {view === 'week' ? (
+        <div className="week">
+          {[1, 2, 3, 4, 5].map(w => (
+            <section key={w} className={`panel wday ${w === wd ? 'is-today' : ''}`}>
+              <h2 className="sec">{DAY_NAMES[w]}{w === wd && <span className="pill ok" style={{ marginLeft: 8 }}>Today</span>}</h2>
+              {blocksFor(w).map(b => (
+                <div key={b.id} className={`wblock ${b.is_protected ? (/meeting/i.test(b.title) ? 'fixed' : 'protected') : ''} ${b.departments.includes('Recruiting') ? 'rec' : ''}`}>
+                  <time>{fmt12(b.start_time).replace(':00', '')}–{fmt12(b.end_time).replace(':00', '')}</time>
+                  <span>{b.title}</span>
+                </div>
+              ))}
+              {blocksFor(w).length === 0 && <div className="empty">Nothing planned.</div>}
+            </section>
+          ))}
+        </div>
+      ) : (
       <div className="grid2">
         <section className="panel">
           <div className="timeline">
-            {day.length === 0 && <div className="empty">No schedule yet. Blocks are created when the workspace is first set up.</div>}
+            {day.length === 0 && <div className="empty">{planned ? 'Weekend. Nothing on the plan today.' : 'No schedule yet.'}</div>}
             {day.map(b => {
               const l = logOf(b.id);
               const isNow = toMin(b.start_time) <= n && n < toMin(b.end_time);
@@ -114,6 +152,7 @@ export default function MyDay() {
           </section>
         </div>
       </div>
+      )}
     </>
   );
 }

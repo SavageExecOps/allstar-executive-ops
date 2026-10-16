@@ -45,6 +45,7 @@ interface Actions {
   deletePreference: (id: string) => Promise<boolean>;
   updateBlock: (id: string, patch: Partial<ScheduleBlock>) => Promise<boolean>;
   setBlockLog: (blockId: string, patch: Partial<BlockLog>) => Promise<void>;
+  replaceSchedule: (rows: Partial<ScheduleBlock>[]) => Promise<boolean>;
   addInterruption: (body: string, task?: NewTask) => Promise<boolean>;
   saveRecap: (kind: Recap['kind'], body: string) => Promise<boolean>;
   setHomeName: (name: string) => Promise<boolean>;
@@ -276,6 +277,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setD(s => ({ ...s, blockLogs: [...s.blockLogs.filter(l => l.block_id !== blockId), data as BlockLog] }));
   }, [supabase, fail, d.blockLogs]);
 
+  // Swaps the whole schedule for a new set of blocks (today's block timers reset).
+  const replaceSchedule: Actions['replaceSchedule'] = useCallback(async (rows) => {
+    const { data, error } = await supabase.from('schedule_blocks').insert(rows).select();
+    if (error) return fail('load the schedule', error);
+    const keep = new Set((data as ScheduleBlock[]).map(x => x.id));
+    const old = d.blocks.map(x => x.id).filter(id => !keep.has(id));
+    if (old.length) {
+      const { error: delErr } = await supabase.from('schedule_blocks').delete().in('id', old);
+      if (delErr) return fail('clear the old schedule', delErr);
+    }
+    setD(s => ({ ...s, blocks: (data as ScheduleBlock[]).sort((a, b) => a.start_time.localeCompare(b.start_time)), blockLogs: s.blockLogs.filter(l => keep.has(l.block_id)) }));
+    return true;
+  }, [supabase, fail, d.blocks]);
+
   const addInterruption: Actions['addInterruption'] = useCallback(async (body, task) => {
     let taskId: string | null = null;
     if (task) { const created = await createTask(task, 'Logged as an interruption'); if (!created) return false; taskId = created.id; }
@@ -304,7 +319,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const value = {
     ...d, refresh, toast, createTask, updateTask, toggleDone, toggleTop, deleteTask, loadActivity, logActivity, carryForward,
     createProject, updateProject, addProjectUpdate, createNote, updateNote, deleteNote,
-    createPreference, updatePreference, deletePreference, updateBlock, setBlockLog, addInterruption, saveRecap, setHomeName,
+    createPreference, updatePreference, deletePreference, updateBlock, setBlockLog, replaceSchedule, addInterruption, saveRecap, setHomeName,
   };
 
   return (

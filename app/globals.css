@@ -343,3 +343,17 @@ body:has(.home){background:#0B0B0B}
 .collapsed .brand .brand-mark{display:block}
 .brand .wm .brand-word{width:150px;height:auto;display:block}
 .brand .wm small{margin-top:6px}
+
+/* Weekly game plan */
+.plan-banner{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line-strong);border-radius:10px;padding:12px 14px;margin-bottom:14px;background:var(--surface,transparent)}
+.plan-banner div{flex:1 1 320px;font-size:13.5px;color:var(--fg2)}
+.plan-banner b{color:var(--fg)}
+.week{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.wday .sec{display:flex;align-items:center;margin-bottom:8px}
+.wday.is-today{border-color:var(--fg)}
+.wblock{display:grid;grid-template-columns:auto 1fr;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px;line-height:1.35}
+.wblock time{font-family:var(--mono);font-size:11px;color:var(--fg3);white-space:nowrap;padding-top:1px}
+.wblock.protected span{color:var(--fg3)}
+.wblock.rec span{font-weight:600}
+.wblock.fixed span{font-weight:700;color:var(--fg)}
+.wblock.fixed span::before{content:'● ';color:#d4a017}
