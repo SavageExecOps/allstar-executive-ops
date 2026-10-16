@@ -71,7 +71,7 @@ function ShellInner({ children }: { children: ReactNode }) {
       <div className={`app ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mopen' : ''}`}>
         <aside className="rail" aria-label="Main navigation">
           <Link href="/" className="brand" title="Home" style={{ color: 'inherit', textDecoration: 'none' }}>{/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/allstar-pegasus-white.png" alt="" aria-hidden="true" width={44} height={39} /><div className="wm">ALL-STAR<small>EXECUTIVE OPS</small></div></Link>
+            <img className="brand-mark" src="/allstar-pegasus-white.png" alt="" aria-hidden="true" width={44} height={39} /><div className="wm"><img className="brand-word" src="/allstar-wordmark-white.png" alt="ALL-STAR" width={150} height={28} /><small>EXECUTIVE OPS</small></div></Link>
           <nav className="nav">
             {NAV.map((n, i) => 'group' in n
               ? <div key={i} className="nav-group-h">{n.group}</div>

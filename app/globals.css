@@ -337,3 +337,9 @@ body:has(.home){background:#0B0B0B}
 .answers dl{margin-top:8px}
 .answers dd{white-space:pre-wrap}
 .codebox{display:block;font-family:var(--mono);font-size:12.5px;background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:9px 11px;overflow-x:auto;white-space:nowrap}
+
+/* Sidebar brand: ALL-STAR wordmark when open, Pegasus when collapsed */
+.brand .brand-mark{display:none}
+.collapsed .brand .brand-mark{display:block}
+.brand .wm .brand-word{width:150px;height:auto;display:block}
+.brand .wm small{margin-top:6px}
