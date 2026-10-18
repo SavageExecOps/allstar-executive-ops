@@ -56,6 +56,8 @@ export interface Recruit {
   other_agency_name: string | null;
   disqualify_reason: string | null;
   form_answers: Record<string, string> | null;
+  contracted_at: string | null;
+  producing_at: string | null;
   created_at: string;
   updated_at: string;
 }

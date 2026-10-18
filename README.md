@@ -56,9 +56,11 @@ npm run typecheck
 - `supabase/migrations/0003_seed.sql`: `seed_starting_items()`, called once by the app on first sign-in
 - `supabase/migrations/0004_home.sql`: the home page name
 - `supabase/migrations/0005_recruiting.sql`: recruiting fields, recruit notes, For Wylie list, starting manager roster
+- `supabase/migrations/0006_qualify_intake.sql`: qualification fields and the calendar intake
+- `supabase/migrations/0007_phase2.sql`: DM tracker, Wins log, recruit contracted/producing dates
 - `supabase/setup.sql`: all of the above combined, for pasting into the SQL Editor
 
 ## Roadmap
 
-- **Phase 2:** Recruiting (pipeline, manager stacking, availability builder), Wylie's calendar & scheduling queue, Finance (KPA queue, QuickBooks checklist, payables, rent), Debt (ledger, plans, payments), ATM program & weekly lead readiness, Advertising, Office, weekly recap.
+- **Phase 2 (built):** Recruiting with DM tracker, Scorecard and Wins log, Wylie's Calendar (request queue, week view, Friday one-on-one and overlap warnings), Finance (KPA questions, bills with autopay, rent, account connections, vendors), Debt (balances from recorded payments, payment plans, Wylie-only compensation flag), Agent Support & Leads (ATM program with verified-deal removal guard, weekly volume leads, groups), Advertising (stages and blockers), Office (supplies and office projects).
 - **Phase 3:** AI assistant (Claude API, server-side, with confirmation for money/messages/deletions/calendar and a full audit log in `ai_activity_log`), Google Calendar and Gmail integrations, automation engine (`automation_rules`, de-duplicated by `last_generated_for`).

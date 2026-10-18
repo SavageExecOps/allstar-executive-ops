@@ -115,3 +115,13 @@ Then **Deployments → ⋯ → Redeploy** so the site picks them up. In the app,
 6. Pick **setup** and click **Run**. It now syncs every 15 minutes on its own.
 
 New bookings appear under **Booked**. Moves update the call time. Cancellations move the recruit to **Didn't connect** with a note.
+
+
+## Phase 2 database update
+
+Run this once so the DM tracker, Scorecard, Wins log and recruit outcome dates work.
+
+1. Supabase → **SQL Editor → New query**.
+2. Paste all of `supabase/migrations/0007_phase2.sql` and click **Run**. It's safe to run more than once.
+
+Until it's run, those sections show a note asking for it. Everything else in Phase 2 (Calendar, Finance, Debt, Leads, Advertising, Office) uses tables that already exist.

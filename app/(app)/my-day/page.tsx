@@ -8,7 +8,7 @@ import { useUI } from '@/components/UI';
 import { isOpen, isOverdue, sortTasks } from '@/lib/tasks';
 import { ctNow, fmt12, fmtClock, fmtDate, fmtSecs, minutesNow, today, toMin, weekday } from '@/lib/time';
 import type { BlockLog, ScheduleBlock } from '@/lib/types';
-import { DAY_NAMES, hasWeekPlan, planRows } from '@/lib/weekPlan';
+import { DAY_NAMES, hasWeekPlan, planOutdated, planRows } from '@/lib/weekPlan';
 
 const elapsed = (l?: BlockLog) =>
   (l?.seconds_tracked ?? 0) + (l?.running_since ? Math.floor((Date.now() - Date.parse(l.running_since)) / 1000) : 0);
@@ -73,9 +73,11 @@ export default function MyDay() {
         <div className="prog"><i style={{ width: `${pct}%` }} /></div>
         <span style={{ color: 'var(--fg3)', fontSize: 12.5 }}>Breaks protected</span>
       </div>
-      {!planned && (
+      {(!planned || planOutdated(blocks)) && (
         <div className="plan-banner">
-          <div><b>Your weekly game plan is ready.</b> Recruiting blocks matched to iClosed, a deep-work focus for each day and Thursday’s 1:00 meeting. It replaces the current schedule.</div>
+          <div>{planned
+            ? <><b>Your game plan has an update:</b> a daily DM block for recruiting outreach. Loading it replaces your schedule, including any block edits.</>
+            : <><b>Your weekly game plan is ready.</b> Recruiting blocks matched to iClosed, a daily DM block, a deep-work focus for each day and Thursday’s 1:00 meeting. It replaces the current schedule.</>}</div>
           <button className="btn primary" disabled={loading} onClick={loadPlan}>{loading ? 'Loading…' : 'Load it'}</button>
         </div>
       )}

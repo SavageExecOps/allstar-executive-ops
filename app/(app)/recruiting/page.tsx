@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useOps } from '@/components/OpsData';
 import { useData } from '@/components/DataProvider';
 import { RecruitDrawer, fmtAppt, fromLocalInput } from '@/components/RecruitDrawer';
+import { DmCounter, useDmLogs } from '@/components/DmCounter';
 import { CLOSED, LANES, STATUS_LABEL, rotation, type Manager, type Recruit } from '@/lib/recruiting';
 import { addDays, dayOf, fmtDate, today, weekday } from '@/lib/time';
 
@@ -16,6 +17,7 @@ export default function Recruiting() {
   const [adding, setAdding] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
   const [editMgr, setEditMgr] = useState<Manager | 'new' | null>(null);
+  const dm = useDmLogs();
 
   const order = rotation(managers, assignments);
   const upNext = order[0];
@@ -43,6 +45,8 @@ export default function Recruiting() {
         </div>
         <div className="qa"><button className="btn primary" onClick={() => setAdding(true)}>New recruit</button></div>
       </div>
+
+      <div style={{ marginBottom: 20 }}><DmCounter dm={dm} /></div>
 
       <div className="grid2" style={{ marginBottom: 20 }}>
         <section className="panel upnext">

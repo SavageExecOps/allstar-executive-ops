@@ -206,6 +206,17 @@ export function RecruitDrawer({ id, onClose }: { id: string; onClose: () => void
             )}
           </section>
 
+          {mgr && (
+            <section className="rsec"><h3 className="rsec-h">Outcome</h3>
+              <p className="hint" style={{ marginTop: 0 }}>Fill these in when you hear back from the manager. They feed your Scorecard.</p>
+              <div className="row2">
+                <div className="field"><label htmlFor="r-contracted">Contracted on</label>
+                  <input type="date" id="r-contracted" value={r.contracted_at ?? ''} onChange={async e => { if (await updateRecruit(r.id, { contracted_at: e.target.value || null })) toast(e.target.value ? 'Marked contracted' : 'Cleared'); }} /></div>
+                <div className="field"><label htmlFor="r-producing">First production on</label>
+                  <input type="date" id="r-producing" value={r.producing_at ?? ''} onChange={async e => { if (await updateRecruit(r.id, { producing_at: e.target.value || null })) toast(e.target.value ? 'Marked producing' : 'Cleared'); }} /></div>
+              </div>
+            </section>
+          )}
 
           {history.length > 1 && (
             <section className="rsec"><h3 className="rsec-h">Assignment history</h3>

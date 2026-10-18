@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { MODULE_SCOPE } from '@/components/nav';
 
 export function generateStaticParams() {
@@ -7,6 +7,8 @@ export function generateStaticParams() {
 }
 
 export default function ModulePage({ params }: { params: { module: string } }) {
+  // Phase 2 modules are built now; old links land on the real pages.
+  if (['calendar', 'finance', 'debt', 'leads', 'advertising', 'office'].includes(params.module)) redirect(`/${params.module}`);
   const m = MODULE_SCOPE[params.module];
   if (!m) notFound();
   return (
