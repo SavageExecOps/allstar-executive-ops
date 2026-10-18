@@ -43,11 +43,22 @@ export async function POST(req: NextRequest) {
   const { data: ownerId, error: oErr } = await db.rpc('owner_id_for_email', { p_email: process.env.INTAKE_OWNER_EMAIL });
   if (oErr || !ownerId) return NextResponse.json({ ok: false, error: 'Owner account not found' }, { status: 500 });
 
+  // Hidden in the app: "rule:<title words>" hides every event whose title contains them,
+  // "hide:<event id>" hides one occurrence. Stored as source='hidden' rows; never synced over.
+  const { data: marks } = await db.from('calendar_events').select('external_event_id').eq('owner_id', ownerId).eq('source', 'hidden');
+  const rules: string[] = [], singles = new Set<string>();
+  for (const m of marks ?? []) {
+    const x = String(m.external_event_id ?? '');
+    if (x.startsWith('rule:')) rules.push(x.slice(5));
+    else if (x.startsWith('hide:')) singles.add(x.slice(5));
+  }
+  const hidden = (id: string, title: string) => singles.has(id) || rules.some(r => r && title.toLowerCase().includes(r));
+
   const events = (body.events as In[]).map(e => {
     const allDay = e.allDay === true;
     const title = text(e.title, 300) || '(No title)';
     return { id: text(e.id, 300), title, starts_at: iso(e.start), ends_at: iso(e.end), all_day: allDay, location: text(e.location, 300) || null };
-  }).filter(e => e.id && e.starts_at && e.ends_at && e.ends_at > e.starts_at!);
+  }).filter(e => e.id && e.starts_at && e.ends_at && e.ends_at > e.starts_at! && !hidden(e.id, e.title));
 
   // What we already have from Google in this window (kind, notes and wins you set are kept).
   const { data: have, error: hErr } = await db.from('calendar_events').select('id,external_event_id,title,starts_at,ends_at,all_day,location')

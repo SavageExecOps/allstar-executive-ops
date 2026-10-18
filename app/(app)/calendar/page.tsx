@@ -1,6 +1,7 @@
 'use client';
 
 import { ModuleHead, RecordBoard, StatusPill, type Field } from '@/components/RecordBoard';
+import { useData } from '@/components/DataProvider';
 import { ModuleTabs } from '@/components/ModuleTabs';
 import { useTable, type Row } from '@/lib/useTable';
 import { addDays, ctNow, today, TZ } from '@/lib/time';
@@ -9,7 +10,7 @@ type Req = Row & { requested_by: string | null; purpose: string; priority: strin
 type Ev = Row & {
   title: string; kind: string; starts_at: string; ends_at: string; confirmed: boolean;
   wins: string | null; bottlenecks: string | null; notes: string | null;
-  source?: string; all_day?: boolean; location?: string | null; updated_at?: string;
+  source?: string; all_day?: boolean; location?: string | null; updated_at?: string; external_event_id?: string | null;
 };
 
 const REQ_STATUS = ['Requested', 'Awaiting Availability', 'Proposed', 'Confirmed', 'Completed', 'Declined'] as const;
@@ -42,12 +43,38 @@ const when = (e: Ev) => e.all_day
   : new Date(e.starts_at).toLocaleString('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 export default function Calendar() {
+  const { toast } = useData();
   const reqs = useTable<Req>('scheduling_requests');
   const evs = useTable<Ev>('calendar_events', { col: 'starts_at', asc: true });
+  // Hidden markers live in the same table (source='hidden') so the sync can skip them.
+  const marks = evs.rows.filter(e => e.source === 'hidden');
+  const shown = (e: Ev) => e.source !== 'hidden';
+  const rules = marks.filter(m => m.external_event_id?.startsWith('rule:'));
+
+  async function hideAll(e: Ev) {
+    const key = e.title.trim().toLowerCase();
+    const ok = rules.some(r => r.external_event_id === `rule:${key}`) || await evs.create({ source: 'hidden', external_event_id: `rule:${key}`, title: e.title.trim(), kind: 'Personal block',
+      starts_at: '2000-01-01T00:00:00Z', ends_at: '2000-01-01T00:01:00Z', confirmed: false } as Partial<Ev>);
+    if (!ok) return;
+    const same = evs.rows.filter(x => x.source === 'google' && x.title.toLowerCase().includes(key));
+    if (same.length) await evs.supabase.from('calendar_events').delete().in('id', same.map(x => x.id));
+    await evs.reload();
+    toast(`Hidden: every “${e.title.trim()}”`);
+  }
+  async function hideOne(e: Ev) {
+    if (e.external_event_id && await evs.create({ source: 'hidden', external_event_id: `hide:${e.external_event_id}`, title: e.title, kind: 'Personal block',
+      starts_at: '2000-01-01T00:00:00Z', ends_at: '2000-01-01T00:01:00Z', confirmed: false } as Partial<Ev>)) {
+      await evs.remove(e.id);
+      toast('Hidden');
+    }
+  }
+  async function unhide(m: Ev) {
+    if (await evs.remove(m.id)) toast('Unhidden. It comes back on the next sync (within 15 minutes).');
+  }
   const t = today();
   const weekEnd = addDays(t, 7);
-  const isToday = (e: Ev) => ctDay(e.starts_at) <= t && endDay(e) >= t;
-  const next7 = evs.rows.filter(e => ctDay(e.starts_at) >= t && ctDay(e.starts_at) < weekEnd);
+  const isToday = (e: Ev) => shown(e) && ctDay(e.starts_at) <= t && endDay(e) >= t;
+  const next7 = evs.rows.filter(e => shown(e) && ctDay(e.starts_at) >= t && ctDay(e.starts_at) < weekEnd);
   const openReqs = reqs.rows.filter(r => !['Completed', 'Declined'].includes(r.status));
   const google = evs.rows.filter(e => e.source === 'google');
   const last = google.reduce((m, e) => (e.updated_at ?? '') > m ? e.updated_at ?? '' : m, '');
@@ -71,17 +98,17 @@ export default function Calendar() {
             defaults={() => ({ kind: 'Meeting', confirmed: false, source: 'manual' } as Partial<Ev>)}
             groups={[
               { label: 'Today', filter: isToday },
-              { label: 'Next 7 days', filter: e => ctDay(e.starts_at) >= t && ctDay(e.starts_at) < weekEnd },
-              { label: 'Later', filter: e => ctDay(e.starts_at) >= weekEnd },
-              { label: 'One-on-ones', filter: e => e.kind === 'One-on-one' && endDay(e) >= t },
-              { label: 'Past', filter: e => endDay(e) < t },
+              { label: 'Next 7 days', filter: e => shown(e) && ctDay(e.starts_at) >= t && ctDay(e.starts_at) < weekEnd },
+              { label: 'Later', filter: e => shown(e) && ctDay(e.starts_at) >= weekEnd },
+              { label: 'One-on-ones', filter: e => shown(e) && e.kind === 'One-on-one' && endDay(e) >= t },
+              { label: 'Past', filter: e => shown(e) && endDay(e) < t },
             ]}
             validate={n => n.starts_at && n.ends_at && n.ends_at <= n.starts_at ? 'The end time has to be after the start time.' : null}
             warn={(n, all) => {
               const notes: string[] = [];
               if (n.kind === 'One-on-one' && n.starts_at && ctWeekday(n.starts_at) === 5) notes.push('Heads up: Wylie keeps Fridays free of one-on-ones.');
               if (n.starts_at && n.ends_at && !n.all_day) {
-                const clash = all.find(e => !e.all_day && e.starts_at < n.ends_at! && n.starts_at! < e.ends_at);
+                const clash = all.find(e => shown(e) && !e.all_day && e.starts_at < n.ends_at! && n.starts_at! < e.ends_at);
                 if (clash) notes.push(`Overlaps with “${clash.title}”.`);
               }
               return notes.join(' ') || null;
@@ -91,8 +118,32 @@ export default function Calendar() {
               { label: 'What', className: 'tt', render: e => <>{e.title}{e.location && <span className="hint" style={{ display: 'block', margin: 0 }}>{e.location}</span>}</> },
               { label: 'Type', key: 'kind' },
               { label: 'Status', render: e => e.source === 'google' ? <span className="pill">From Google</span> : e.confirmed ? <span className="pill ok">Confirmed</span> : <span className="pill conf">Not confirmed</span> },
+              { label: '', className: 'rb-act', render: e => e.source === 'google'
+                ? <button className="btn sm ghost" title={`Hide every “${e.title}”`} aria-label={`Hide every ${e.title}`} onClick={ev => { ev.stopPropagation(); hideAll(e); }}>Hide</button> : null },
             ]}
+            extra={e => e.source === 'google' ? (
+              <div className="subrec">
+                <label className="eyebrow" style={{ margin: 0 }}>Don’t need to see this?</label>
+                <div className="toolbar" style={{ margin: 0 }}>
+                  <button type="button" className="btn sm" onClick={() => hideAll(e)}>Hide every “{e.title}”</button>
+                  <button type="button" className="btn sm ghost" onClick={() => hideOne(e)}>Hide just this one</button>
+                </div>
+                <span className="hint" style={{ margin: 0 }}>Only hides it here. Wylie’s calendar isn’t touched. Undo any time under Hidden.</span>
+              </div>
+            ) : null}
             empty="Nothing here." />
+        ) },
+        { label: `Hidden${marks.length ? ` (${marks.length})` : ''}`, body: marks.length === 0 ? (
+          <div className="empty">Nothing hidden. Click <b>Hide</b> on any Google event, like a daily devotion, to stop seeing it.</div>
+        ) : (
+          <div className="stack" style={{ gap: 0 }}>
+            {[...rules, ...marks.filter(m => !rules.includes(m))].map(m => (
+              <div key={m.id} className="sr hidden-row">
+                <span>{m.external_event_id?.startsWith('rule:') ? <>Every event with <b>“{m.title}”</b></> : <>One “{m.title}”</>}</span>
+                <button className="btn sm ghost" onClick={() => unhide(m)}>Unhide</button>
+              </div>
+            ))}
+          </div>
         ) },
         { label: 'Requests', body: (
           <RecordBoard t={reqs} noun="request" fields={reqFields} titleOf={r => r.purpose}

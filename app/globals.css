@@ -401,3 +401,6 @@ body:has(.home){background:#0B0B0B}
 .score-main{display:flex;flex-direction:column;justify-content:center;gap:4px;border:1px solid var(--accent);border-radius:var(--r);padding:16px 20px;background:var(--accent-soft)}
 .score-n{font-family:var(--display);font-stretch:112%;font-weight:800;font-size:56px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
 @media (max-width:640px){.score-hero{grid-template-columns:1fr}}
+.ttable.rb td.rb-act{width:1%;white-space:nowrap;text-align:right}
+.hidden-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+@media (max-width:640px){.ttable.rb td.rb-act{width:100%;justify-content:flex-end}.ttable.rb td.rb-act::before{content:none}}
