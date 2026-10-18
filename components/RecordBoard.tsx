@@ -22,7 +22,7 @@ export type Group<T> = { label: string; filter: (r: T) => boolean };
 const GOOD = /^(paid|completed|ready|active|confirmed|connected|stocked|answered|closed|done|deal closed)$/i;
 const BAD = /^(overdue|out|disputed|escalated|at risk|disconnected|defaulted|declined)$/i;
 const WAIT = /(waiting|awaiting|pending|proposed|requested|request received)/i;
-const WARN = /^(low|needs reconnect|removal required|contact required|partially paid)$/i;
+const WARN = /^(low|needs reconnect|removal required|contact required|partially paid|not paid)$/i;
 export function pillClass(s: unknown) {
   const v = String(s ?? '');
   return GOOD.test(v) ? 'ok' : BAD.test(v) ? 'crit' : WARN.test(v) ? 'high' : WAIT.test(v) ? 'wait' : '';

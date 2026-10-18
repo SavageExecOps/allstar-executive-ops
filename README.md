@@ -57,10 +57,11 @@ npm run typecheck
 - `supabase/migrations/0004_home.sql`: the home page name
 - `supabase/migrations/0005_recruiting.sql`: recruiting fields, recruit notes, For Wylie list, starting manager roster
 - `supabase/migrations/0006_qualify_intake.sql`: qualification fields and the calendar intake
-- `supabase/migrations/0007_phase2.sql`: DM tracker, Wins log, recruit contracted/producing dates
+- `supabase/migrations/0007_phase2.sql`: DM tracker, Wins log, recruit contracted date
+- `supabase/migrations/0008_support_calendar.sql`: Agent Support list, Google Calendar sync for Wylie's calendar
 - `supabase/setup.sql`: all of the above combined, for pasting into the SQL Editor
 
 ## Roadmap
 
-- **Phase 2 (built):** Recruiting with DM tracker, Scorecard and Wins log, Wylie's Calendar (request queue, week view, Friday one-on-one and overlap warnings), Finance (KPA questions, bills with autopay, rent, account connections, vendors), Debt (balances from recorded payments, payment plans, Wylie-only compensation flag), Agent Support & Leads (ATM program with verified-deal removal guard, weekly volume leads, groups), Advertising (stages and blockers), Office (supplies and office projects).
+- **Phase 2 (built):** Recruiting with a booked-from-DMs counter, Scorecard (contracted is the headline) and Wins log; Wylie's Calendar (synced from Google every 15 minutes, request queue, Friday one-on-one and overlap warnings); Debt (balances from recorded payments, payment plans, Wylie-only compensation flag); Agent Support (lead type, licensed states, lead spend, cut dates); Office & Rent (who hasn't paid, fixes and projects, supplies).
 - **Phase 3:** AI assistant (Claude API, server-side, with confirmation for money/messages/deletions/calendar and a full audit log in `ai_activity_log`), Google Calendar and Gmail integrations, automation engine (`automation_rules`, de-duplicated by `last_generated_for`).

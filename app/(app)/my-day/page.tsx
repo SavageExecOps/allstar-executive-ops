@@ -76,7 +76,7 @@ export default function MyDay() {
       {(!planned || planOutdated(blocks)) && (
         <div className="plan-banner">
           <div>{planned
-            ? <><b>Your game plan has an update:</b> a daily DM block for recruiting outreach. Loading it replaces your schedule, including any block edits.</>
+            ? <><b>Your game plan has an update:</b> a daily DM block and refreshed deep-work blocks. Loading it replaces your schedule, including any block edits.</>
             : <><b>Your weekly game plan is ready.</b> Recruiting blocks matched to iClosed, a daily DM block, a deep-work focus for each day and Thursday’s 1:00 meeting. It replaces the current schedule.</>}</div>
           <button className="btn primary" disabled={loading} onClick={loadPlan}>{loading ? 'Loading…' : 'Load it'}</button>
         </div>

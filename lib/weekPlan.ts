@@ -18,9 +18,9 @@ const DM = (start = '13:15', end = '14:00') => b(start, end, 'DM block', 'Answer
 
 /** Index = weekday (0 Sunday … 6 Saturday). Weekends are off. */
 export const WEEK_PLAN: Record<number, Row[]> = {
-  1: [OPEN, WYLIE, REC_AM, LUNCH, DM(), deep('Deep work · Finance & Bookkeeping', 'KPA questions, QuickBooks and bank reconnects, bills and autopay checks, rent.', ['Finance']), REC_PM, CLOSE],
+  1: [OPEN, WYLIE, REC_AM, LUNCH, DM(), deep('Deep work · Finance & rent', 'Answer KPA questions, check QuickBooks and bank connections, bills and autopay. Check Office & Rent for anyone who hasn’t paid.', ['Finance', 'Office']), REC_PM, CLOSE],
   2: [OPEN, WYLIE, REC_AM, LUNCH, DM(), deep('Deep work · Debt Management', 'Payment follow-ups and debt records. Any compensation action goes to Wylie first.', ['Debt']), REC_PM, CLOSE],
-  3: [OPEN, WYLIE, REC_AM, LUNCH, DM(), deep('Deep work · Agent Support, Leads & Advertising', 'ATM free lead requests and enrollments, removals from verified deals only, ad requests that are waiting or blocked.', ['Leads', 'Advertising']), REC_PM, CLOSE],
+  3: [OPEN, WYLIE, REC_AM, LUNCH, DM(), deep('Deep work · Agent Support', 'Update lead spend, check who’s coming up on their cut date, and any agent support requests.', ['Leads']), REC_PM, CLOSE],
   4: [OPEN, WYLIE, REC_AM,
     b('12:30', '13:00', 'Lunch', 'Short one today: the meeting starts at 1.', [], { is_protected: true }),
     b('13:00', '14:00', 'Mandatory meeting', 'Non-negotiable. Be there.', [], { is_protected: true }),
@@ -50,4 +50,5 @@ export function planRows() {
 /** The plan is in place when the schedule has weekday-specific blocks. */
 export const hasWeekPlan = (blocks: ScheduleBlock[]) => blocks.some(x => x.weekday !== null);
 /** Loaded before the DM blocks were added. */
-export const planOutdated = (blocks: ScheduleBlock[]) => hasWeekPlan(blocks) && !blocks.some(x => x.title === 'DM block');
+export const planOutdated = (blocks: ScheduleBlock[]) => hasWeekPlan(blocks)
+  && (!blocks.some(x => x.title === 'DM block') || blocks.some(x => x.title === 'Deep work · Agent Support, Leads & Advertising'));

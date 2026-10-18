@@ -38,11 +38,9 @@ export const NAV: NavItem[] = [
   { href: '/recruiting', label: 'Recruiting', icon: 'rec', count: 'recruits' },
   { href: '/scorecard', label: 'Scorecard', icon: 'score' },
   { href: '/calendar', label: 'Wylie’s Calendar', icon: 'cal' },
-  { href: '/finance', label: 'Finance & Bookkeeping', icon: 'fin' },
   { href: '/debt', label: 'Debt Management', icon: 'debt' },
-  { href: '/leads', label: 'Agent Support & Leads', icon: 'lead' },
-  { href: '/advertising', label: 'Advertising', icon: 'ad' },
-  { href: '/office', label: 'Office Operations', icon: 'office' },
+  { href: '/leads', label: 'Agent Support', icon: 'lead' },
+  { href: '/office', label: 'Office & Rent', icon: 'office' },
   { href: '/m/communications', label: 'Communications', icon: 'comm', phase: 3 },
   { href: '/m/ai', label: 'AI Assistant', icon: 'ai', phase: 3 },
   { group: 'System' },
@@ -55,11 +53,6 @@ export const MODULE_SCOPE: Record<string, { title: string; phase: 2 | 3; items: 
     'Direct-report directory and meeting priorities',
     'Back-to-back 30-minute one-on-one grouping; Friday one-on-ones restricted (configurable)',
     'Conflict warnings and a weekly scheduling briefing. Nothing books without approval.'] },
-  finance: { title: 'Finance & Bookkeeping', phase: 2, items: [
-    'KPA question queue (transactions, W-9s, Zelle details)',
-    'QuickBooks connection checklist. Bank accounts and Venmo are already tracked as “Needs reconnect”.',
-    'Accounts payable with autopay verification (coffee machine invoices)',
-    'Monthly office rent tracker. No banking credentials are ever stored.'] },
   debt: { title: 'Debt Management', phase: 2, items: [
     'Debt ledger, payment history and installment schedules, with balances computed from recorded payments',
     'Identified → Verified → … → Paid workflow, plus Disputed / Escalated / Closed',
@@ -69,9 +62,6 @@ export const MODULE_SCOPE: Record<string, { title: string; phase: 2 | 3; items: 
     'ATM free lead program: request inbox, enrollment, closed-deal records, removal queue',
     'Editable program rules; no removals from unverified deal notices',
     'Weekly volume lead readiness for both groups with a Friday reminder'] },
-  advertising: { title: 'Advertising', phase: 2, items: [
-    'Agent advertising tracker: Requested → Payment Pending → Preparation → Ready → Active',
-    'Central view of who is waiting and what is blocking launch'] },
   office: { title: 'Office Operations', phase: 2, items: [
     'Internet project: vendor, quote (expected Oct 19), equipment, install, testing',
     'Lightweight supplies list with reorder thresholds'] },

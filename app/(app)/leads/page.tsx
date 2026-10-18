@@ -1,107 +1,88 @@
 'use client';
 
 import { ModuleHead, RecordBoard, StatusPill, type Field } from '@/components/RecordBoard';
-import { ModuleTabs } from '@/components/ModuleTabs';
-import { useTable, type Row } from '@/lib/useTable';
-import { addDays, fmtDate, today, weekday } from '@/lib/time';
+import { money, useTable, type Row } from '@/lib/useTable';
+import { addDays, fmtDate, today } from '@/lib/time';
 
-type Enr = Row & { agent_name: string; status: string; requested_at: string | null; added_at: string | null; closed_deal_verified: boolean; notes: string | null };
-type Group = Row & { name: string; responsible_contact: string | null; notes: string | null };
-type Ready = Row & { lead_group_id: string; week_of: string; required_volume: number | null; confirmed_volume: number | null; status: string; outstanding_issues: string | null; notes: string | null };
+type Agent = Row & {
+  agent_name: string; lead_type: string; lead_type_other: string | null; states: string | null;
+  lead_spend: number | null; spend_period: string; support_start: string | null; support_end: string | null;
+  status: 'Active' | 'Ended'; notes: string | null;
+};
 
-const ENR = ['Request Received', 'Reviewed', 'Added', 'Active', 'Deal Closed', 'Removal Required', 'Completed'] as const;
-const enrFields: Field[] = [
+const LEAD_TYPES = ['Final Expense', 'Veterans', 'Truckers', 'Mortgage Protection', 'Other'] as const;
+const fields: Field[] = [
   { key: 'agent_name', label: 'Agent', required: true },
-  { key: 'status', label: 'Status', type: 'select', options: ENR, required: true },
-  { key: 'requested_at', label: 'Requested', type: 'date' },
-  { key: 'added_at', label: 'Added to program', type: 'date' },
-  { key: 'closed_deal_verified', label: 'Closed deal verified (checked against the carrier or Wylie, not just a notice)', type: 'bool', full: true,
-    hint: 'Required before anyone is removed or their leads are pulled.' },
+  { key: 'lead_type', label: 'Lead type', type: 'select', options: LEAD_TYPES, required: true },
+  { key: 'lead_type_other', label: 'If other, what', placeholder: 'Only when Lead type is Other' },
+  { key: 'states', label: 'Licensed in', placeholder: 'TX, OK, FL' },
+  { key: 'lead_spend', label: 'Lead spend', type: 'money' },
+  { key: 'spend_period', label: 'Spend is', type: 'select', options: ['Weekly', 'Monthly', 'Total'], required: true },
+  { key: 'support_start', label: 'Support started', type: 'date' },
+  { key: 'support_end', label: 'Cut from support on', type: 'date' },
+  { key: 'status', label: 'Status', type: 'select', options: ['Active', 'Ended'], required: true },
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ];
-const nextMonday = () => { const t = today(); return addDays(t, ((8 - weekday(t)) % 7) || 7); };
+const leadType = (a: Agent) => a.lead_type === 'Other' && a.lead_type_other ? a.lead_type_other : a.lead_type;
+/** Normalize "tx,ok / fl" → "TX, OK, FL". */
+const tidyStates = (s: unknown) => s == null ? null : String(s).split(/[\s,/;]+/).filter(Boolean).map(x => x.toUpperCase()).join(', ') || null;
 
-export default function Leads() {
-  const enr = useTable<Enr>('atm_enrollments');
-  const groups = useTable<Group>('lead_groups', { col: 'name', asc: true });
-  const ready = useTable<Ready>('weekly_lead_readiness', { col: 'week_of', asc: false });
-  const nm = nextMonday();
-  const gName = (id: string) => groups.rows.find(g => g.id === id)?.name ?? '—';
-  const notReady = groups.rows.filter(g => !ready.rows.some(r => r.lead_group_id === g.id && r.week_of === nm && r.status === 'Ready'));
-  const wd = weekday(today());
+export default function AgentSupport() {
+  const agents = useTable<Agent>('agent_support', { col: 'support_end', asc: true });
+  const t = today();
+  const soon = addDays(t, 14);
+  const active = agents.rows.filter(a => a.status === 'Active');
+  const pastDue = active.filter(a => a.support_end && a.support_end < t);
+  const cutSoon = active.filter(a => a.support_end && a.support_end >= t && a.support_end <= soon);
+  const weekly = active.reduce((s, a) => s + (a.spend_period === 'Weekly' ? Number(a.lead_spend ?? 0) : a.spend_period === 'Monthly' ? Number(a.lead_spend ?? 0) * 12 / 52 : 0), 0);
 
-  const readyFields: Field[] = [
-    { key: 'lead_group_id', label: 'Group', type: 'select', options: groups.rows.map(g => ({ value: g.id, label: g.name })), required: true },
-    { key: 'week_of', label: 'Week of (Monday)', type: 'date', required: true },
-    { key: 'required_volume', label: 'Leads needed', type: 'number', hint: 'Blank until confirmed.' },
-    { key: 'confirmed_volume', label: 'Leads confirmed', type: 'number' },
-    { key: 'status', label: 'Status', type: 'select', options: ['Not Started', 'In Progress', 'Awaiting Confirmation', 'Ready', 'At Risk'], required: true },
-    { key: 'outstanding_issues', label: 'What’s blocking', type: 'textarea' },
-  ];
+  const cutCell = (a: Agent) => {
+    if (!a.support_end) return <span className="pill conf">No date</span>;
+    if (a.status === 'Active' && a.support_end < t) return <span className="pill crit">Past due · {fmtDate(a.support_end)}</span>;
+    if (a.status === 'Active' && a.support_end <= soon) return <span className="pill high">{fmtDate(a.support_end)}</span>;
+    return fmtDate(a.support_end);
+  };
 
   return (
     <>
-      <ModuleHead eyebrow="Operations" title="Agent Support & Leads"
-        sub="The ATM free lead program and weekly volume leads for both groups. Nobody gets removed on an unverified deal notice."
+      <ModuleHead eyebrow="Operations" title="Agent Support"
+        sub="Every agent we’re supporting: what they run, where they’re licensed, what we spend and when support ends."
         stats={[
-          { n: enr.rows.filter(e => e.status === 'Request Received').length, l: 'Requests to review' },
-          { n: enr.rows.filter(e => ['Added', 'Active'].includes(e.status)).length, l: 'In the program', tone: 'ok' },
-          { n: enr.rows.filter(e => e.status === 'Deal Closed' && !e.closed_deal_verified).length, l: 'Deal notices to verify', tone: 'warn' },
-          { n: enr.rows.filter(e => e.status === 'Removal Required').length, l: 'Removal queue', tone: 'crit' },
-          { n: `${groups.rows.length - notReady.length}/${groups.rows.length}`, l: `Groups ready for ${fmtDate(nm)}` },
+          { n: active.length, l: 'Agents supported', tone: 'ok' },
+          { n: money(weekly), l: 'Lead spend per week' },
+          { n: cutSoon.length, l: 'Cut in the next 14 days', tone: cutSoon.length ? 'warn' : '' },
+          { n: pastDue.length, l: 'Past their cut date', tone: pastDue.length ? 'crit' : '' },
         ]} />
-      {(wd === 4 || wd === 5) && notReady.length > 0 && (
+      {pastDue.length > 0 && (
         <div className="rb-warn" style={{ marginBottom: 16 }} role="status">
-          Friday check: next week’s volume leads aren’t marked ready for {notReady.map(g => g.name).join(' and ')}.
+          Past their cut date and still active: {pastDue.map(a => a.agent_name).join(', ')}. Confirm with Wylie, then mark them Ended.
         </div>
       )}
-      <ModuleTabs id="leads" tabs={[
-        { label: 'ATM free leads', body: (
-          <RecordBoard t={enr} noun="enrollment" fields={enrFields} titleOf={e => e.agent_name}
-            defaults={() => ({ status: 'Request Received', requested_at: today(), closed_deal_verified: false } as Partial<Enr>)}
-            groups={[
-              { label: 'Requests', filter: e => ['Request Received', 'Reviewed'].includes(e.status) },
-              { label: 'In program', filter: e => ['Added', 'Active'].includes(e.status) },
-              { label: 'Deal closed', filter: e => e.status === 'Deal Closed' },
-              { label: 'Removal queue', filter: e => e.status === 'Removal Required' },
-              { label: 'Completed', filter: e => e.status === 'Completed' },
-            ]}
-            validate={n => (n.status === 'Removal Required' || n.status === 'Completed') && !n.closed_deal_verified
-              ? 'Verify the closed deal first. No removals based only on an unverified notice.' : null}
-            warn={n => n.status === 'Deal Closed' && !n.closed_deal_verified ? 'Deal notice logged. Verify it before moving to removal.' : null}
-            columns={[
-              { label: 'Agent', key: 'agent_name' },
-              { label: 'Status', render: e => <StatusPill s={e.status} /> },
-              { label: 'Requested', key: 'requested_at' },
-              { label: 'Added', key: 'added_at' },
-              { label: 'Deal verified', render: e => e.closed_deal_verified ? <span className="pill ok">Verified</span> : e.status === 'Deal Closed' ? <span className="pill high">Not yet</span> : '—' },
-            ]}
-            empty="Nothing in this stage." />
-        ) },
-        { label: 'Weekly volume leads', body: groups.rows.length === 0 ? <div className="empty">Add your lead groups first (next tab).</div> : (
-          <RecordBoard t={ready} noun="week" fields={readyFields} titleOf={r => `${gName(r.lead_group_id)} · ${r.week_of}`}
-            defaults={() => ({ week_of: nm, status: 'Not Started', lead_group_id: notReady[0]?.id ?? groups.rows[0]?.id } as Partial<Ready>)}
-            validate={(n, prev) => {
-              if (n.week_of && weekday(String(n.week_of)) !== 1) return 'Week of has to be a Monday.';
-              const dup = ready.rows.find(r => r.id !== prev?.id && r.lead_group_id === n.lead_group_id && r.week_of === n.week_of);
-              return dup ? 'That group already has an entry for that week.' : null;
-            }}
-            groups={[{ label: 'Next week', filter: r => r.week_of === nm }, { label: 'All weeks', filter: () => true }]}
-            columns={[
-              { label: 'Group', render: r => gName(r.lead_group_id), className: 'tt' },
-              { label: 'Week of', key: 'week_of' },
-              { label: 'Needed', render: r => r.required_volume ?? <span className="pill conf">Confirm</span> },
-              { label: 'Confirmed', render: r => r.confirmed_volume ?? '—' },
-              { label: 'Status', render: r => <StatusPill s={r.status} /> },
-            ]}
-            empty="Nothing logged for next week yet." />
-        ) },
-        { label: 'Lead groups', body: (
-          <RecordBoard t={groups} noun="group" titleOf={g => g.name}
-            fields={[{ key: 'name', label: 'Group name', required: true }, { key: 'responsible_contact', label: 'Who runs it' }, { key: 'notes', label: 'Notes', type: 'textarea' }]}
-            columns={[{ label: 'Group', key: 'name' }, { label: 'Who runs it', key: 'responsible_contact' }, { label: 'Notes', key: 'notes' }]} />
-        ) },
-      ]} />
+      <section className="panel">
+        <RecordBoard t={agents} noun="agent" fields={fields} titleOf={a => a.agent_name}
+          defaults={() => ({ lead_type: 'Final Expense', spend_period: 'Weekly', status: 'Active', support_start: today() } as Partial<Agent>)}
+          groups={[
+            { label: 'Active', filter: a => a.status === 'Active' },
+            ...LEAD_TYPES.slice(0, 3).map(lt => ({ label: lt, filter: (a: Agent) => a.status === 'Active' && a.lead_type === lt })),
+            { label: 'Ended', filter: a => a.status === 'Ended' },
+          ]}
+          sort={(a, b) => (a.support_end ?? '9999').localeCompare(b.support_end ?? '9999')}
+          validate={n => {
+            if (n.support_start && n.support_end && n.support_end < n.support_start) return 'The cut date can’t be before support started.';
+            if (n.lead_type === 'Other' && !n.lead_type_other) return 'Say what the lead type is.';
+            (n as Record<string, unknown>).states = tidyStates(n.states);
+            return null;
+          }}
+          columns={[
+            { label: 'Agent', key: 'agent_name' },
+            { label: 'Lead type', render: a => <span className="pill gold">{leadType(a)}</span> },
+            { label: 'Licensed in', render: a => a.states ?? '—' },
+            { label: 'Lead spend', render: a => a.lead_spend == null ? '—' : `${money(a.lead_spend)}${a.spend_period === 'Total' ? '' : a.spend_period === 'Weekly' ? '/wk' : '/mo'}` },
+            { label: 'Cut on', render: cutCell },
+            { label: 'Status', render: a => a.status === 'Active' ? <StatusPill s="Active" /> : <span className="pill">Ended</span> },
+          ]}
+          empty="No agents here yet. Add the agents you’re supporting." />
+      </section>
     </>
   );
 }

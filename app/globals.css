@@ -396,3 +396,8 @@ body:has(.home){background:#0B0B0B}
 .wins-copy{width:100%;font-family:var(--mono);font-size:12px}
 .rb-form{display:flex;flex-direction:column;gap:14px}
 .fgrid input[type=checkbox]{width:auto;flex:none}
+.dmc-one{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.dmc-one .stat-n{font-size:26px}.dmc{padding:14px 18px}
+.score-hero{display:grid;grid-template-columns:minmax(180px,.8fr) 2fr;gap:20px;align-items:stretch}
+.score-main{display:flex;flex-direction:column;justify-content:center;gap:4px;border:1px solid var(--accent);border-radius:var(--r);padding:16px 20px;background:var(--accent-soft)}
+.score-n{font-family:var(--display);font-stretch:112%;font-weight:800;font-size:56px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+@media (max-width:640px){.score-hero{grid-template-columns:1fr}}

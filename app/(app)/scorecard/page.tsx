@@ -40,51 +40,36 @@ export default function Scorecard() {
   const inPstamp = (s: string | null | undefined) => !!s && dayOf(s) >= from;
 
   const m = useMemo(() => {
-    const d = sumLogs(dm.logs, from);
+    const booked = sumLogs(dm.logs, from).booked;
     const added = recruits.filter(r => inPstamp(r.created_at)).length;
-    const assigned = new Set(assignments.filter(a => inPstamp(a.assigned_at)).map(a => a.recruit_id)).size;
     const handed = recruits.filter(r => inPstamp(r.handed_off_at)).length;
     const contracted = recruits.filter(r => inP(r.contracted_at)).length;
-    const producing = recruits.filter(r => inP(r.producing_at)).length;
     const recovered = pays.rows.filter(x => inP(x.paid_on)).reduce((s, x) => s + Number(x.amount), 0);
     const ws = wins.rows.filter(w => inP(w.happened_on));
-    const saved = ws.filter(w => w.category === 'Money saved').reduce((s, w) => s + Number(w.value ?? 0), 0);
-    const done = tasks.filter(t => t.status === 'Done' && inPstamp(t.completed_at)).length;
-    return { ...d, added, assigned, handed, contracted, producing, recovered, saved, wins: ws, done };
+    return { booked, added, handed, contracted, recovered, wins: ws };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dm.logs, recruits, assignments, pays.rows, wins.rows, tasks, from]);
+  }, [dm.logs, recruits, pays.rows, wins.rows, from]);
 
   const summary = [
     `${homeName} · Executive Ops scorecard · ${p.label}${period === 'all' ? '' : ` (since ${fmtDate(from)})`}`,
     '',
-    'RECRUITING',
-    `• ${m.sent} DMs sent → ${m.replies} replies → ${m.booked} calls booked from DMs`,
-    `• ${m.added} recruits in the pipeline · ${m.assigned} paired with a manager · ${m.handed} handed off`,
-    `• ${m.contracted} contracted · ${m.producing} producing`,
-    '',
-    'MONEY',
-    `• ${money(m.recovered)} recovered on debts`,
-    m.saved ? `• ${money(m.saved)} saved` : '',
-    '',
-    'OPERATIONS',
-    `• ${m.done} tasks closed out`,
-    ...m.wins.slice(0, 8).map(w => `• ${w.title}${w.value ? ` (${money(w.value)})` : ''}`),
+    `CONTRACTED: ${m.contracted}`,
+    `• ${m.booked} calls booked from DMs`,
+    `• ${m.added} recruits added · ${m.handed} handed off to managers`,
+    m.recovered ? `• ${money(m.recovered)} recovered on debts` : '',
+    ...(m.wins.length ? ['', 'WINS', ...m.wins.slice(0, 8).map(w => `• ${w.title}${w.value ? ` (${money(w.value)})` : ''}`)] : []),
   ].filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n');
 
   const funnel: [number, string, string?][] = [
-    [m.sent, 'DMs sent'],
-    [m.replies, 'Replies', pct(m.replies, m.sent)],
-    [m.booked, 'Booked from DMs', pct(m.booked, m.replies)],
+    [m.booked, 'Booked from DMs'],
     [m.added, 'Recruits added'],
     [m.handed, 'Handed off', pct(m.handed, m.added)],
-    [m.contracted, 'Contracted', pct(m.contracted, m.handed)],
-    [m.producing, 'Producing', pct(m.producing, m.contracted)],
   ];
 
   return (
     <>
       <ModuleHead eyebrow="Your numbers" title="Scorecard"
-        sub="The receipts. Everything you move, from first DM to producing agent and every dollar recovered. Bring this to your one-on-one." />
+        sub="The receipts. Recruits you bring in, hand off and get contracted. Bring this to your one-on-one." />
       <div className="toolbar">
         <div className="seg" role="group" aria-label="Period">
           {PERIODS.map(x => <button key={x.key} className={period === x.key ? 'on' : ''} onClick={() => setPeriod(x.key)}>{x.label}</button>)}
@@ -92,18 +77,14 @@ export default function Scorecard() {
       </div>
       <div className="stack">
         <section className="panel">
-          <div className="panel-h"><h2 className="sec">Recruiting funnel</h2></div>
-          <div className="funnel">
-            {funnel.map(([n, l, c]) => <div key={l} className="stat"><span className="stat-n">{n}</span><span className="stat-l">{l}</span>{c && <span className="conv">{c} from last step</span>}</div>)}
+          <div className="score-hero">
+            <div className="score-main"><span className="score-n">{m.contracted}</span><span className="stat-l">Contracted · {pct(m.contracted, m.handed)} of handed off</span></div>
+            <div className="funnel">
+              {funnel.map(([n, l, c]) => <div key={l} className="stat"><span className="stat-n">{n}</span><span className="stat-l">{l}</span>{c && <span className="conv">{c} of added</span>}</div>)}
+            </div>
           </div>
-          <p className="hint">Contracted and producing come from the Outcome dates on each recruit. Fill them in when the manager confirms.</p>
+          <p className="hint">Contracted comes from the “Contracted on” date on each recruit. Fill it in when the manager confirms.</p>
         </section>
-        <div className="mstats" style={{ margin: 0 }}>
-          <div className="stat ok"><span className="stat-n">{money(m.recovered)}</span><span className="stat-l">Recovered on debts</span></div>
-          <div className="stat ok"><span className="stat-n">{money(m.saved)}</span><span className="stat-l">Money saved (logged wins)</span></div>
-          <div className="stat"><span className="stat-n">{m.done}</span><span className="stat-l">Tasks closed</span></div>
-          <div className="stat gold"><span className="stat-n">{m.wins.length}</span><span className="stat-l">Wins logged</span></div>
-        </div>
         <DmCounter dm={dm} />
         <div className="grid2">
           <section className="panel">

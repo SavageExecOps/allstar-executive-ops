@@ -119,9 +119,19 @@ New bookings appear under **Booked**. Moves update the call time. Cancellations 
 
 ## Phase 2 database update
 
-Run this once so the DM tracker, Scorecard, Wins log and recruit outcome dates work.
+Run these once, in order, in Supabase → **SQL Editor → New query → Run**. Both are safe to run more than once.
 
-1. Supabase → **SQL Editor → New query**.
-2. Paste all of `supabase/migrations/0007_phase2.sql` and click **Run**. It's safe to run more than once.
+1. `supabase/migrations/0007_phase2.sql`: DM counter, Wins log, recruit "Contracted on" date.
+2. `supabase/migrations/0008_support_calendar.sql`: Agent Support list and Wylie's calendar sync.
 
-Until it's run, those sections show a note asking for it. Everything else in Phase 2 (Calendar, Finance, Debt, Leads, Advertising, Office) uses tables that already exist.
+Until they're run, those sections show a note asking for them.
+
+## Wylie's calendar
+
+Wylie's Google Calendar can fill in **Wylie's Calendar** on its own, using the same script as recruiting. It only reads his calendar; nothing is ever changed on it.
+
+1. **Wylie shares his calendar with the recruiting Google account.** Google Calendar → Settings → his calendar → **Share with specific people** → add that account with **See all event details**.
+2. In the Apps Script, paste the latest `integrations/google-calendar-recruiting.gs`, keep your `INTAKE_KEY` and `CALENDAR_ID`, and set `WYLIE_CALENDAR_ID` to Wylie's calendar email.
+3. Run **listWylieUpcoming** once to check it can see his events, then run **setup** again.
+
+From then on his next 30 days update every 15 minutes. Moved events move, cancelled ones disappear. The type, notes and wins you add are kept.

@@ -8,7 +8,6 @@ import { addDays, today, weekday } from '@/lib/time';
 
 export type DmLog = { id: string; day: string; sent: number; replies: number; booked: number; notes: string | null };
 type K = 'sent' | 'replies' | 'booked';
-const LABEL: Record<K, string> = { sent: 'DMs sent', replies: 'Replies', booked: 'Calls booked' };
 export const weekStart = (d = today()) => addDays(d, -((weekday(d) + 6) % 7));
 
 /** All DM days, newest first. */
@@ -37,27 +36,19 @@ export const sumLogs = (logs: DmLog[], from: string, to = '9999') =>
   logs.filter(l => l.day >= from && l.day <= to).reduce((s, l) => ({ sent: s.sent + l.sent, replies: s.replies + l.replies, booked: s.booked + l.booked }), { sent: 0, replies: 0, booked: 0 });
 export const pct = (a: number, b: number) => b ? `${Math.round((a / b) * 100)}%` : '—';
 
-/** Tap-to-count DM tracker for the outreach block. */
+/** One tap each time a DM turns into a booked call. */
 export function DmCounter({ dm }: { dm: ReturnType<typeof useDmLogs> }) {
-  if (dm.missing) return <section className="panel"><div className="empty">The DM tracker needs the latest database update (0007_phase2.sql).</div></section>;
-  const t = dm.logs.find(l => l.day === today()) ?? { sent: 0, replies: 0, booked: 0 };
-  const w = sumLogs(dm.logs, weekStart());
+  if (dm.missing) return <section className="panel"><div className="empty">The DM counter needs the latest database update (see SETUP.md).</div></section>;
+  const t = dm.logs.find(l => l.day === today())?.booked ?? 0;
+  const w = sumLogs(dm.logs, weekStart()).booked;
   return (
-    <section className="panel dmc" aria-label="DM tracker">
-      <div className="panel-h"><h2 className="sec">DMs today</h2>
-        <span className="hint" style={{ margin: 0 }}>This week: {w.sent} sent · {w.replies} replies ({pct(w.replies, w.sent)}) · {w.booked} booked ({pct(w.booked, w.replies)})</span></div>
-      <div className="dmc-row">
-        {(['sent', 'replies', 'booked'] as K[]).map(k => (
-          <div key={k} className="dmc-cell">
-            <span className="stat-n">{t[k]}</span>
-            <span className="stat-l">{LABEL[k]}</span>
-            <div className="dmc-btns">
-              <button className="btn sm ghost" aria-label={`Minus one ${LABEL[k]}`} onClick={() => dm.bump(k, -1)} disabled={t[k] === 0}>−</button>
-              <button className="btn sm" aria-label={`Plus one ${LABEL[k]}`} onClick={() => dm.bump(k, 1)}>+1</button>
-              {k === 'sent' && <button className="btn sm" aria-label="Plus five DMs sent" onClick={() => dm.bump(k, 5)}>+5</button>}
-            </div>
-          </div>
-        ))}
+    <section className="panel dmc" aria-label="Calls booked from DMs">
+      <div className="dmc-one">
+        <div><span className="stat-n">{t}</span><span className="stat-l"> booked from DMs today · {w} this week</span></div>
+        <div className="dmc-btns" style={{ marginTop: 0 }}>
+          <button className="btn sm ghost" aria-label="Minus one booked" onClick={() => dm.bump('booked', -1)} disabled={t === 0}>−</button>
+          <button className="btn sm primary" aria-label="Plus one booked from DMs" onClick={() => dm.bump('booked', 1)}>+1 booked</button>
+        </div>
       </div>
     </section>
   );
