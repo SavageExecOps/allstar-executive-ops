@@ -8,10 +8,11 @@ import { useData } from '@/components/DataProvider';
 import { useUI } from '@/components/UI';
 import { money, useTable, type Row } from '@/lib/useTable';
 import { isOpen, sortTasks } from '@/lib/tasks';
-import { fmtDate, today } from '@/lib/time';
+import { addDays, fmtDate, today } from '@/lib/time';
+import { parseQuickBooks } from '@/lib/qbRent';
 
 type Item = Row & { item: string; category: string | null; level: string; reorder_threshold: string | null; last_restock: string | null; next_restock: string | null; notes: string | null };
-type Rent = Row & { direction: string; category: string; counterparty: string | null; amount: number | null; amount_paid: number; due_date: string | null; status: string; payment_method: string | null; notes: string | null };
+type Rent = Row & { direction: string; category: string; counterparty: string | null; invoice_number: string | null; invoice_sent_at: string | null; amount: number | null; amount_paid: number; due_date: string | null; status: string; payment_method: string | null; notes: string | null };
 
 const supplyFields: Field[] = [
   { key: 'item', label: 'Item', required: true, placeholder: 'Coffee pods, paper towels…' },
@@ -24,7 +25,9 @@ const supplyFields: Field[] = [
 const rentFields: Field[] = [
   { key: 'counterparty', label: 'Tenant', required: true },
   { key: 'amount', label: 'Rent', type: 'money', required: true },
+  { key: 'invoice_sent_at', label: 'Invoice date', type: 'date' },
   { key: 'due_date', label: 'Due', type: 'date', required: true },
+  { key: 'invoice_number', label: 'Invoice #' },
   { key: 'status', label: 'Status', type: 'select', options: ['Open', 'Partially Paid', 'Paid', 'Void'], required: true },
   { key: 'amount_paid', label: 'Paid so far', type: 'money' },
   { key: 'payment_method', label: 'Paid with', placeholder: 'Zelle, check…' },
@@ -41,11 +44,15 @@ export default function Office() {
   const inv = useTable<Rent>('invoices', { col: 'due_date', asc: false });
   const [title, setTitle] = useState('');
   const [due, setDue] = useState('');
+  const [paste, setPaste] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const t = today();
   const ym = t.slice(0, 7);
   const rent = inv.rows.filter(r => r.direction === 'receivable' && r.category === 'Office rent');
-  const thisMonth = rent.filter(r => r.due_date?.startsWith(ym));
+  // The rent month is the invoice date (QuickBooks bills on the 1st, due 30 days later).
+  const monthOf = (r: Rent) => (r.invoice_sent_at ?? r.due_date ?? '').slice(0, 7);
+  const thisMonth = rent.filter(r => monthOf(r) === ym);
   const unpaid = thisMonth.filter(r => UNPAID.includes(r.status));
   const owed = rent.filter(r => UNPAID.includes(r.status)).reduce((s, r) => s + Number(r.amount ?? 0) - Number(r.amount_paid ?? 0), 0);
   const late = (r: Rent) => UNPAID.includes(r.status) && !!r.due_date && r.due_date < t;
@@ -56,11 +63,37 @@ export default function Office() {
   async function startMonth() {
     let made = 0;
     for (const n of missing) {
-      const last = rent.filter(r => r.counterparty === n).sort((a, b) => (b.due_date ?? '').localeCompare(a.due_date ?? ''))[0];
-      const day = last?.due_date?.slice(8, 10) ?? '01';
-      if (await inv.create({ direction: 'receivable', category: 'Office rent', counterparty: n, amount: last?.amount ?? null, amount_paid: 0, due_date: `${ym}-${day}`, status: 'Open' } as Partial<Rent>)) made++;
+      const last = rent.filter(r => r.counterparty === n).sort((a, b) => monthOf(b).localeCompare(monthOf(a)))[0];
+      const billed = `${ym}-${(last?.invoice_sent_at ?? last?.due_date ?? '').slice(8, 10) || '01'}`;
+      const gap = last?.invoice_sent_at && last.due_date ? Math.round((Date.parse(last.due_date) - Date.parse(last.invoice_sent_at)) / 864e5) : 0;
+      if (await inv.create({ direction: 'receivable', category: 'Office rent', counterparty: n, amount: last?.amount ?? null, amount_paid: 0,
+        invoice_sent_at: billed, due_date: addDays(billed, gap), status: 'Open' } as Partial<Rent>)) made++;
     }
     toast(made ? `${monthName(ym)} rent added for ${made} tenant${made > 1 ? 's' : ''}` : 'Nothing to add');
+  }
+
+  async function importQb() {
+    const list = parseQuickBooks(paste ?? '');
+    if (!list.length) { toast('Couldn’t find any invoices in that. Copy the rows from QuickBooks → Invoices and paste again.'); return; }
+    setImporting(true);
+    let added = 0, updated = 0;
+    const noStatus: string[] = [];
+    for (const q of list) {
+      if (q.paid === null) noStatus.push(`#${q.invoice_number}`);
+      const existing = rent.find(r => r.invoice_number === q.invoice_number);
+      const status = q.paid ? 'Paid' : existing && q.paid === null ? existing.status : 'Open';
+      const row = {
+        counterparty: q.counterparty, amount: q.amount, invoice_number: q.invoice_number, invoice_sent_at: q.invoice_sent_at,
+        due_date: q.due_date ?? existing?.due_date ?? addDays(q.invoice_sent_at, 30), status,
+        amount_paid: status === 'Paid' ? q.amount : existing?.amount_paid ?? 0,
+        notes: q.qb_status ? `QuickBooks: ${q.qb_status}` : existing?.notes ?? null,
+      } as Partial<Rent>;
+      if (existing) { if (await inv.update(existing.id, row)) updated++; }
+      else if (await inv.create({ ...row, direction: 'receivable', category: 'Office rent' } as Partial<Rent>)) added++;
+    }
+    setImporting(false);
+    setPaste(null);
+    toast(`Imported ${list.length}: ${added} new, ${updated} updated.${noStatus.length ? ` No status for ${noStatus.join(', ')}; marked not paid, change it if it was.` : ''}`);
   }
 
   const fixes = sortTasks(tasks.filter(x => x.department === 'Office' && isOpen(x)));
@@ -79,17 +112,33 @@ export default function Office() {
       <ModuleTabs id="office" tabs={[
         { label: 'Rent', body: (
           <>
+            {paste === null ? (
+              <div className="toolbar" style={{ justifyContent: 'flex-end' }}>
+                <button className="btn sm" onClick={() => setPaste('')}>Import from QuickBooks</button>
+              </div>
+            ) : (
+              <div className="qb-import">
+                <label htmlFor="qb-paste" className="eyebrow" style={{ margin: 0 }}>Paste your QuickBooks invoice list</label>
+                <textarea id="qb-paste" rows={7} value={paste} onChange={e => setPaste(e.target.value)} autoFocus
+                  placeholder={'QuickBooks → Sales → Invoices. Select the rows, copy, paste here.\n9/1/26  1085  Orvedahl, Logan  $500.00  Overdue 18 days  Sent'} />
+                <div className="toolbar" style={{ margin: 0 }}>
+                  <span className="hint" style={{ margin: 0, flex: 1 }}>{(() => { const n = parseQuickBooks(paste).length; return n ? `${n} invoice${n > 1 ? 's' : ''} found. Matching invoice numbers get updated, new ones get added.` : 'Nothing found yet.'; })()}</span>
+                  <button className="btn sm ghost" onClick={() => setPaste(null)}>Cancel</button>
+                  <button className="btn sm primary" disabled={importing || !parseQuickBooks(paste).length} onClick={importQb}>{importing ? 'Importing…' : 'Import'}</button>
+                </div>
+              </div>
+            )}
             {missing.length > 0 && (
               <div className="plan-banner">
-                <div><b>{monthName(ym)} rent isn’t set up for {missing.length} tenant{missing.length > 1 ? 's' : ''}</b> ({missing.join(', ')}). Uses each tenant’s last amount and due day.</div>
+                <div><b>No {monthName(ym)} rent invoice for {missing.join(', ')}.</b> If they still owe this month, this adds it using their last amount.</div>
                 <button className="btn primary" onClick={startMonth}>Add {monthName(ym)} rent</button>
               </div>
             )}
             <RecordBoard t={inv} noun="rent payment" newLabel="Add tenant rent" fields={rentFields} titleOf={r => r.counterparty ?? 'Rent'}
-              defaults={() => ({ direction: 'receivable', category: 'Office rent', status: 'Open', amount_paid: 0, due_date: `${ym}-01` } as Partial<Rent>)}
+              defaults={() => ({ direction: 'receivable', category: 'Office rent', status: 'Open', amount_paid: 0, invoice_sent_at: `${ym}-01`, due_date: addDays(`${ym}-01`, 30) } as Partial<Rent>)}
               groups={[
                 { label: 'Hasn’t paid', filter: r => r.direction === 'receivable' && r.category === 'Office rent' && UNPAID.includes(r.status) },
-                { label: monthName(ym), filter: r => r.direction === 'receivable' && r.category === 'Office rent' && !!r.due_date?.startsWith(ym) },
+                { label: monthName(ym), filter: r => r.direction === 'receivable' && r.category === 'Office rent' && monthOf(r) === ym },
                 { label: 'All', filter: r => r.direction === 'receivable' && r.category === 'Office rent' },
               ]}
               validate={n => {
@@ -97,10 +146,11 @@ export default function Office() {
                 if (n.status === 'Paid' && n.amount != null) (n as Record<string, unknown>).amount_paid = n.amount;
                 return null;
               }}
-              sort={(a, b) => Number(late(b)) - Number(late(a)) || (a.counterparty ?? '').localeCompare(b.counterparty ?? '')}
+              sort={(a, b) => Number(late(b)) - Number(late(a)) || monthOf(b).localeCompare(monthOf(a)) || (a.counterparty ?? '').localeCompare(b.counterparty ?? '')}
               columns={[
                 { label: 'Tenant', render: r => r.counterparty ?? '—', className: 'tt' },
-                { label: 'Month', render: r => r.due_date ? monthName(r.due_date.slice(0, 7)) : '—' },
+                { label: 'Month', render: r => monthOf(r) ? monthName(monthOf(r)) : '—' },
+                { label: 'Inv #', render: r => r.invoice_number ?? '—' },
                 { label: 'Rent', render: r => money(r.amount) },
                 { label: 'Due', render: r => r.due_date ? fmtDate(r.due_date) : '—' },
                 { label: 'Status', render: r => <StatusPill s={late(r) ? 'Overdue' : r.status === 'Open' ? 'Not paid' : r.status} /> },

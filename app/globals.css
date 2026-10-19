@@ -413,3 +413,4 @@ body:has(.home){background:#0B0B0B}
 .team-list li{border-top:1px solid var(--line)}
 .team-name{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:none;border:0;padding:10px 2px;text-align:left;font-size:14px;color:var(--fg);cursor:pointer}
 .team-name:hover span:first-child{text-decoration:underline;text-underline-offset:3px}
+.qb-import{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line-strong);border-radius:10px;padding:12px;margin-bottom:14px}.qb-import textarea{font-family:var(--mono);font-size:12px}
