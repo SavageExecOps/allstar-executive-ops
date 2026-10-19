@@ -404,3 +404,5 @@ body:has(.home){background:#0B0B0B}
 .ttable.rb td.rb-act{width:1%;white-space:nowrap;text-align:right}
 .hidden-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
 @media (max-width:640px){.ttable.rb td.rb-act{width:100%;justify-content:flex-end}.ttable.rb td.rb-act::before{content:none}}
+.home-title{font-family:var(--display);font-stretch:112%;font-weight:700;font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--h-dim);display:flex;align-items:center;gap:12px;margin-top:-4px}
+.home-title::before{content:'';width:28px;height:1px;background:var(--h-gold)}

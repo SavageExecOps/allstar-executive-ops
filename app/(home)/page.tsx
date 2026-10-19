@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useData } from '@/components/DataProvider';
-import { HOME_LINES } from '@/lib/lines';
+import { HOME_LINES, HOME_TITLE } from '@/lib/lines';
 import { metrics } from '@/lib/tasks';
 import { ctNow, fmtDate, TZ } from '@/lib/time';
 
@@ -52,6 +52,7 @@ export default function Home() {
         <div className="home-hero">
           <div className="home-date">{fmtDate(p.iso, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
           <h1>{greeting},<br />{homeName}.</h1>
+          <div className="home-title">{HOME_TITLE}</div>
           <p className="home-line">{lineIdx === null ? '\u00a0' : HOME_LINES[lineIdx]}</p>
         </div>
 
