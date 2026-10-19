@@ -406,3 +406,10 @@ body:has(.home){background:#0B0B0B}
 @media (max-width:640px){.ttable.rb td.rb-act{width:100%;justify-content:flex-end}.ttable.rb td.rb-act::before{content:none}}
 .home-title{font-family:var(--display);font-stretch:112%;font-weight:700;font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--h-dim);display:flex;align-items:center;gap:12px;margin-top:-4px}
 .home-title::before{content:'';width:28px;height:1px;background:var(--h-gold)}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start;margin-bottom:12px}
+.team-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.team-meta{font-family:var(--mono);font-size:11.5px;color:var(--fg3)}
+.team-list{list-style:none;margin:0;padding:0}
+.team-list li{border-top:1px solid var(--line)}
+.team-name{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:none;border:0;padding:10px 2px;text-align:left;font-size:14px;color:var(--fg);cursor:pointer}
+.team-name:hover span:first-child{text-decoration:underline;text-underline-offset:3px}

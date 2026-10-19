@@ -1,55 +1,60 @@
 'use client';
 
-import { ModuleHead, RecordBoard, StatusPill, type Field } from '@/components/RecordBoard';
+import { useMemo, useState } from 'react';
+import { ModuleHead, RecordDrawer, type Field } from '@/components/RecordBoard';
 import { money, useTable, type Row } from '@/lib/useTable';
 import { addDays, fmtDate, today } from '@/lib/time';
 
 type Agent = Row & {
-  agent_name: string; lead_type: string; lead_type_other: string | null; states: string | null;
+  agent_name: string; email: string | null; team: string | null;
+  lead_type: string | null; lead_type_other: string | null; states: string | null;
   lead_spend: number | null; spend_period: string; support_start: string | null; support_end: string | null;
   status: 'Active' | 'Ended'; notes: string | null;
 };
 
 const LEAD_TYPES = ['Final Expense', 'Veterans', 'Truckers', 'Mortgage Protection', 'Other'] as const;
-const fields: Field[] = [
+const fields = (teams: string[]): Field[] => [
   { key: 'agent_name', label: 'Agent', required: true },
-  { key: 'lead_type', label: 'Lead type', type: 'select', options: LEAD_TYPES, required: true },
-  { key: 'lead_type_other', label: 'If other, what', placeholder: 'Only when Lead type is Other' },
+  { key: 'email', label: 'Email' },
+  { key: 'team', label: 'Team', placeholder: teams.join(' / ') || 'Team 1', hint: teams.length ? `Type it exactly to match: ${teams.join(', ')}` : undefined },
+  { key: 'lead_spend', label: 'Lead spend for this agent', type: 'money' },
+  { key: 'lead_type', label: 'Lead type', type: 'select', options: LEAD_TYPES },
+  { key: 'lead_type_other', label: 'If other, what' },
   { key: 'states', label: 'Licensed in', placeholder: 'TX, OK, FL' },
-  { key: 'lead_spend', label: 'Lead spend', type: 'money' },
-  { key: 'spend_period', label: 'Spend is', type: 'select', options: ['Weekly', 'Monthly', 'Total'], required: true },
-  { key: 'support_start', label: 'Support started', type: 'date' },
   { key: 'support_end', label: 'Cut from support on', type: 'date' },
+  { key: 'support_start', label: 'Support started', type: 'date' },
   { key: 'status', label: 'Status', type: 'select', options: ['Active', 'Ended'], required: true },
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ];
-const leadType = (a: Agent) => a.lead_type === 'Other' && a.lead_type_other ? a.lead_type_other : a.lead_type;
-/** Normalize "tx,ok / fl" → "TX, OK, FL". */
 const tidyStates = (s: unknown) => s == null ? null : String(s).split(/[\s,/;]+/).filter(Boolean).map(x => x.toUpperCase()).join(', ') || null;
+const NO_TEAM = 'No team';
 
 export default function AgentSupport() {
-  const agents = useTable<Agent>('agent_support', { col: 'support_end', asc: true });
+  const agents = useTable<Agent>('agent_support', { col: 'agent_name', asc: true });
+  const [open, setOpen] = useState<Agent | 'new' | null>(null);
+  const [showEnded, setShowEnded] = useState(false);
   const t = today();
   const soon = addDays(t, 14);
+
   const active = agents.rows.filter(a => a.status === 'Active');
+  const teams = useMemo(() => Array.from(new Set(agents.rows.map(a => a.team).filter(Boolean) as string[])).sort(), [agents.rows]);
+  const groups = [...teams, NO_TEAM].map(name => ({
+    name,
+    list: active.filter(a => (a.team ?? NO_TEAM) === name).sort((a, b) => a.agent_name.localeCompare(b.agent_name)),
+  })).filter(g => g.list.length);
   const pastDue = active.filter(a => a.support_end && a.support_end < t);
   const cutSoon = active.filter(a => a.support_end && a.support_end >= t && a.support_end <= soon);
-  const weekly = active.reduce((s, a) => s + (a.spend_period === 'Weekly' ? Number(a.lead_spend ?? 0) : a.spend_period === 'Monthly' ? Number(a.lead_spend ?? 0) * 12 / 52 : 0), 0);
+  const ended = agents.rows.filter(a => a.status === 'Ended');
 
-  const cutCell = (a: Agent) => {
-    if (!a.support_end) return <span className="pill conf">No date</span>;
-    if (a.status === 'Active' && a.support_end < t) return <span className="pill crit">Past due · {fmtDate(a.support_end)}</span>;
-    if (a.status === 'Active' && a.support_end <= soon) return <span className="pill high">{fmtDate(a.support_end)}</span>;
-    return fmtDate(a.support_end);
-  };
+  if (agents.missing) return <div className="empty">Agent Support needs the latest database update (see SETUP.md).</div>;
 
   return (
     <>
       <ModuleHead eyebrow="Operations" title="Agent Support"
-        sub="Every agent we’re supporting: what they run, where they’re licensed, what we spend and when support ends."
+        sub="Who we’re supporting, by team. Click a name to see or edit lead spend, lead type, states and cut date."
         stats={[
           { n: active.length, l: 'Agents supported', tone: 'ok' },
-          { n: money(weekly), l: 'Lead spend per week' },
+          { n: money(Math.round(active.reduce((s, a) => s + Number(a.lead_spend ?? 0), 0))), l: 'Total lead spend' },
           { n: cutSoon.length, l: 'Cut in the next 14 days', tone: cutSoon.length ? 'warn' : '' },
           { n: pastDue.length, l: 'Past their cut date', tone: pastDue.length ? 'crit' : '' },
         ]} />
@@ -58,31 +63,58 @@ export default function AgentSupport() {
           Past their cut date and still active: {pastDue.map(a => a.agent_name).join(', ')}. Confirm with Wylie, then mark them Ended.
         </div>
       )}
-      <section className="panel">
-        <RecordBoard t={agents} noun="agent" fields={fields} titleOf={a => a.agent_name}
-          defaults={() => ({ lead_type: 'Final Expense', spend_period: 'Weekly', status: 'Active', support_start: today() } as Partial<Agent>)}
-          groups={[
-            { label: 'Active', filter: a => a.status === 'Active' },
-            ...LEAD_TYPES.slice(0, 3).map(lt => ({ label: lt, filter: (a: Agent) => a.status === 'Active' && a.lead_type === lt })),
-            { label: 'Ended', filter: a => a.status === 'Ended' },
-          ]}
-          sort={(a, b) => (a.support_end ?? '9999').localeCompare(b.support_end ?? '9999')}
+      <div className="toolbar" style={{ justifyContent: 'flex-end' }}>
+        <button className="btn primary sm" onClick={() => setOpen('new')}>Add agent</button>
+      </div>
+      {!agents.ready ? <div className="empty">Loading…</div> : groups.length === 0 ? (
+        <section className="panel"><div className="empty">No agents yet. Add the agents you’re supporting.</div></section>
+      ) : (
+        <div className="teams">
+          {groups.map(g => {
+            const spends = g.list.map(a => a.lead_spend).filter(v => v != null).map(Number);
+            const each = spends.length && spends.every(v => v === spends[0]) ? spends[0] : null;
+            const total = spends.reduce((s, v) => s + v, 0);
+            return (
+              <section key={g.name} className="panel team">
+                <div className="team-h">
+                  <h2 className="sec">{g.name}</h2>
+                  <span className="team-meta">{g.list.length} agents{each != null ? ` · ${money(each)} each` : ''}{total ? ` · ${money(Math.round(total))} total` : ''}</span>
+                </div>
+                <ul className="team-list">
+                  {g.list.map(a => {
+                    const late = a.support_end && a.support_end < t;
+                    const near = a.support_end && !late && a.support_end <= soon;
+                    return (
+                      <li key={a.id}>
+                        <button className="team-name" onClick={() => setOpen(a)}>
+                          <span>{a.agent_name}</span>
+                          {late ? <span className="pill crit">Past cut · {fmtDate(a.support_end)}</span> : near ? <span className="pill high">Cut {fmtDate(a.support_end)}</span> : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            );
+          })}
+        </div>
+      )}
+      {ended.length > 0 && (
+        <p className="hint">{ended.length} no longer supported. <button className="link" onClick={() => setShowEnded(s => !s)}>{showEnded ? 'Hide' : 'Show'}</button>
+          {showEnded && <span style={{ display: 'block', marginTop: 6 }}>{ended.map(a => <button key={a.id} className="link" style={{ marginRight: 12 }} onClick={() => setOpen(a)}>{a.agent_name}</button>)}</span>}
+        </p>
+      )}
+      {open && (
+        <RecordDrawer t={agents} noun="agent" fields={fields(teams)} row={open === 'new' ? null : open}
+          defaults={{ status: 'Active', spend_period: 'Total', team: teams[0] ?? null } as Partial<Agent>}
+          titleOf={a => a.agent_name} onClose={() => setOpen(null)}
           validate={n => {
             if (n.support_start && n.support_end && n.support_end < n.support_start) return 'The cut date can’t be before support started.';
             if (n.lead_type === 'Other' && !n.lead_type_other) return 'Say what the lead type is.';
             (n as Record<string, unknown>).states = tidyStates(n.states);
             return null;
-          }}
-          columns={[
-            { label: 'Agent', key: 'agent_name' },
-            { label: 'Lead type', render: a => <span className="pill gold">{leadType(a)}</span> },
-            { label: 'Licensed in', render: a => a.states ?? '—' },
-            { label: 'Lead spend', render: a => a.lead_spend == null ? '—' : `${money(a.lead_spend)}${a.spend_period === 'Total' ? '' : a.spend_period === 'Weekly' ? '/wk' : '/mo'}` },
-            { label: 'Cut on', render: cutCell },
-            { label: 'Status', render: a => a.status === 'Active' ? <StatusPill s="Active" /> : <span className="pill">Ended</span> },
-          ]}
-          empty="No agents here yet. Add the agents you’re supporting." />
-      </section>
+          }} />
+      )}
     </>
   );
 }
