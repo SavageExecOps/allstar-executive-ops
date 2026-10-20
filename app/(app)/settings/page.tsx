@@ -81,8 +81,8 @@ export default function Settings() {
         <section className="panel">
           <div className="panel-h"><h2 className="sec">Appearance</h2></div>
           <div className="seg">
-            {(['', 'light', 'dark'] as Theme[]).map(t => (
-              <button key={t || 'system'} className={theme === t ? 'on' : ''} onClick={() => applyTheme(t)}>{t ? t[0].toUpperCase() + t.slice(1) : 'System'}</button>
+            {([['', 'Bridge (dark)'], ['light', 'Light']] as [Theme, string][]).map(([t, l]) => (
+              <button key={l} className={(theme === t || (t === '' && theme === 'dark')) ? 'on' : ''} onClick={() => applyTheme(t)}>{l}</button>
             ))}
           </div>
         </section>

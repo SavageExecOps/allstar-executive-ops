@@ -16,7 +16,10 @@ export default function CommandCenter() {
   const p = ctNow();
   const greet = p.h < 12 ? 'Good morning' : p.h < 17 ? 'Good afternoon' : 'Good evening';
   const n = minutesNow();
-  const block = blocks.find(b => (b.weekday === null) && toMin(b.start_time) <= n && n < toMin(b.end_time));
+  // The day's schedule: weekday-specific blocks (the weekly plan) win over everyday ones.
+  const wdToday = new Date(p.iso + 'T12:00:00Z').getUTCDay();
+  const todays = blocks.some(b => b.weekday === wdToday) ? blocks.filter(b => b.weekday === wdToday) : blocks.filter(b => b.weekday === null);
+  const block = todays.find(b => toMin(b.start_time) <= n && n < toMin(b.end_time));
   const top = sortTasks(m.top).slice(0, 3);
   const dueNow = sortTasks([...m.overdue, ...m.today]);
   const dept = (d: string) => tasks.filter(t => isOpen(t) && t.department === d).length;

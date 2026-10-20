@@ -8,8 +8,8 @@ import { OpsProvider, useOps } from './OpsData';
 import { UICtx, useUI, type QuickKind } from './UI';
 import { Icon, NAV } from './nav';
 import { BlockEditor, ProjectDrawer, QuickAdd, TaskDrawer } from './Overlays';
+import { NowBar } from './NowBar';
 import { isOpen, isWaiting } from '@/lib/tasks';
-import { TZ } from '@/lib/time';
 
 type Layer = { kind: 'task' | 'project' | 'block'; id: string } | { kind: 'quick'; q: QuickKind } | null;
 
@@ -60,7 +60,7 @@ function ShellInner({ children }: { children: ReactNode }) {
   }
   function toggleTheme() {
     const root = document.documentElement;
-    const cur = root.getAttribute('data-theme') ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const cur = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
     const next = cur === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     try { localStorage.setItem('aeo.theme', next); } catch { /* ignore */ }
@@ -88,6 +88,8 @@ function ShellInner({ children }: { children: ReactNode }) {
           </div>
         </aside>
         <div className="main">
+          <div className="topwrap">
+          <NowBar />
           <header className="topbar">
             <button className="btn ghost menu-btn" type="button" aria-label="Open menu" onClick={() => setMobileOpen(o => !o)}>
               <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
@@ -96,8 +98,8 @@ function ShellInner({ children }: { children: ReactNode }) {
             <button className="btn primary" type="button" onClick={() => ui.quickAdd('task')}>
               <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg><span id="addBtnLabel">Quick add</span>
             </button>
-            <Clock />
           </header>
+          </div>
           <main className="page">
             {data.error && <div className="err" role="alert">{data.error} <button className="link" onClick={() => data.refresh()}>Try again</button></div>}
             {data.ready ? children : <div className="loading">Loading your workspace…</div>}
@@ -109,18 +111,6 @@ function ShellInner({ children }: { children: ReactNode }) {
       {layer?.kind === 'block' && <BlockEditor id={layer.id} onClose={close} />}
       {layer?.kind === 'quick' && <QuickAdd kind={layer.q} onClose={close} />}
     </UICtx.Provider>
-  );
-}
-
-function Clock() {
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => { setNow(new Date()); const i = setInterval(() => setNow(new Date()), 15_000); return () => clearInterval(i); }, []);
-  if (!now) return <div className="clock" />;
-  return (
-    <div className="clock">
-      <b>{now.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' })}</b>
-      <span>{now.toLocaleDateString('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric' })} · CT</span>
-    </div>
   );
 }
 

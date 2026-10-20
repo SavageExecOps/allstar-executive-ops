@@ -2,30 +2,26 @@
 @tailwind utilities;
 /* Layout: fixed dark rail with the mark + a calm working canvas; summary strip on top, detail below. */
 :root{
-  --bg:#F6F6F4; --surface:#FFFFFF; --sunk:#EEEEEB; --line:#E2E2DE; --line-strong:#CFCFCA;
-  --fg:#141414; --fg2:#55554F; --fg3:#8A8A83;
-  --rail:#111111; --rail-fg:#F2F2EF; --rail-dim:#8F8F88; --rail-hi:#1F1F1E;
-  --accent:#9A7A3E; --accent-soft:#F1EADB; --accent-fg:#FFFFFF;
-  --crit:#B3261E; --crit-soft:#FBE9E7; --warn:#A15C00; --warn-soft:#FBF0DE; --ok:#2E6B3F; --ok-soft:#E6F1E8; --info:#33507A; --info-soft:#E7EDF6;
+  /* The Bridge: black, warm white, one gold. Default everywhere. */
+  --bg:#0B0B0B; --surface:#121211; --sunk:#191917; --line:#242422; --line-strong:#34342F;
+  --fg:#F2F2EF; --fg2:#B5B5AE; --fg3:#8F8F88;
+  --rail:#070707; --rail-fg:#F2F2EF; --rail-dim:#8F8F88; --rail-hi:#17140D;
+  --accent:#C9A766; --accent-hi:#E3C88F; --accent-soft:#17140D; --accent-line:#3A3220; --accent-fg:#0B0B0B;
+  --crit:#F08A80; --crit-soft:#2A1513; --warn:#E7AE5E; --warn-soft:#2A1F10; --ok:#7FC495; --ok-soft:#13241A; --info:#93B1DD; --info-soft:#151C28;
   --display:"Archivo","Helvetica Neue",Arial,sans-serif;
   --body:"Instrument Sans",-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
-  --r:8px;
+  --r:10px;
+  color-scheme:dark;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0E0E0E; --surface:#171716; --sunk:#1E1E1D; --line:#2A2A28; --line-strong:#3A3A37;
-  --fg:#F0F0EC; --fg2:#B4B4AC; --fg3:#7C7C75;
-  --rail:#050505; --rail-fg:#F2F2EF; --rail-dim:#86867F; --rail-hi:#1A1A19;
-  --accent:#C9A766; --accent-soft:#2A2418; --accent-fg:#141414;
-  --crit:#F08A80; --crit-soft:#3A1916; --warn:#E7AE5E; --warn-soft:#342612; --ok:#7FC495; --ok-soft:#16281C; --info:#93B1DD; --info-soft:#18202D;
-  color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0E0E0E; --surface:#171716; --sunk:#1E1E1D; --line:#2A2A28; --line-strong:#3A3A37;
-  --fg:#F0F0EC; --fg2:#B4B4AC; --fg3:#7C7C75;
-  --rail:#050505; --rail-fg:#F2F2EF; --rail-dim:#86867F; --rail-hi:#1A1A19;
-  --accent:#C9A766; --accent-soft:#2A2418; --accent-fg:#141414;
-  --crit:#F08A80; --crit-soft:#3A1916; --warn:#E7AE5E; --warn-soft:#342612; --ok:#7FC495; --ok-soft:#16281C; --info:#93B1DD; --info-soft:#18202D;
-  color-scheme:dark}
+/* Light, only when picked in Settings or with the Theme button. */
+:root[data-theme="light"]{
+  --bg:#F6F6F4; --surface:#FFFFFF; --sunk:#EEEEEB; --line:#E2E2DE; --line-strong:#CFCFCA;
+  --fg:#141414; --fg2:#55554F; --fg3:#75756E;
+  --rail:#111111; --rail-fg:#F2F2EF; --rail-dim:#8F8F88; --rail-hi:#1F1F1E;
+  --accent:#9A7A3E; --accent-hi:#7E6230; --accent-soft:#F1EADB; --accent-line:#DCCBA6; --accent-fg:#FFFFFF;
+  --crit:#B3261E; --crit-soft:#FBE9E7; --warn:#A15C00; --warn-soft:#FBF0DE; --ok:#2E6B3F; --ok-soft:#E6F1E8; --info:#33507A; --info-soft:#E7EDF6;
+  color-scheme:light}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0}
@@ -414,3 +410,53 @@ body:has(.home){background:#0B0B0B}
 .team-name{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;background:none;border:0;padding:10px 2px;text-align:left;font-size:14px;color:var(--fg);cursor:pointer}
 .team-name:hover span:first-child{text-decoration:underline;text-underline-offset:3px}
 .qb-import{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line-strong);border-radius:10px;padding:12px;margin-bottom:14px}.qb-import textarea{font-family:var(--mono);font-size:12px}
+
+/* ---------- The Bridge, everywhere ---------- */
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+.btn.primary:hover{background:var(--accent-hi);border-color:var(--accent-hi);opacity:1}
+a.btn.primary{color:var(--accent-fg)}
+.btn{border-radius:7px}
+.rail{border-right:1px solid #1C1C1A}
+.nav a.on{background:#17140D;box-shadow:inset 2px 0 0 #C9A766;opacity:1}
+.nav a.on .navcount{color:var(--accent)}
+.nav-group-h{color:#6E6E68;letter-spacing:.22em}
+.brand .wm small{color:var(--accent)!important;letter-spacing:.26em}
+.page{position:relative}
+.ph{position:relative;margin-bottom:26px}
+.ph h1{font-size:clamp(34px,4vw,52px);letter-spacing:-.01em}
+.ph .eyebrow{letter-spacing:.24em;margin-bottom:10px}
+.ph .sub{color:var(--fg2)}
+/* Faint Pegasus behind every page header (dark only; it's a white mark). */
+.page::before{content:"";position:absolute;right:-30px;top:-20px;width:min(460px,48vw);aspect-ratio:601/534;background:url(/allstar-pegasus-white.png) no-repeat right top/contain;opacity:.05;pointer-events:none;z-index:0}
+.page>*{position:relative;z-index:1}
+:root[data-theme="light"] .page::before{display:none}
+.panel{border-radius:var(--r)}
+h2.sec{letter-spacing:.14em}
+.block.now{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 1px var(--accent);border-top-color:transparent;border-radius:var(--r);margin-block:2px}
+.block.now+.block{border-top-color:transparent}
+.topbar{background:color-mix(in srgb,var(--bg) 90%,transparent)}
+/* Now bar */
+.topwrap{position:sticky;top:0;z-index:6}
+.topwrap .topbar{position:static}
+.nowbar{display:flex;align-items:center;gap:16px;min-height:40px;padding:6px max(24px,env(safe-area-inset-right,0px)) 6px 24px;background:var(--accent-soft);border-bottom:1px solid var(--accent-line);font-size:13px;overflow:hidden}
+.nowbar .tag{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--accent);flex:none}
+.nowbar .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent);animation:nowPulse 2.4s ease-in-out infinite}
+.nowbar .tag.dim{color:var(--fg3)}
+.nowbar .tag.dim .dot{background:var(--fg3);box-shadow:none;animation:none}
+.nowbar .what{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.nowbar a.what{color:inherit;text-decoration:none}
+.nowbar a.what:hover{text-decoration:underline;text-underline-offset:3px}
+.nowbar .prog{width:110px;height:3px;border-radius:2px;background:var(--line-strong);flex:none;overflow:hidden}
+.nowbar .prog i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.nowbar .left{font-family:var(--mono);font-size:12px;color:var(--fg2);flex:none}
+.nowbar .sep{width:1px;height:16px;background:var(--line-strong);flex:none}
+.nowbar .next{color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.nowbar .clk{margin-left:auto;font-family:var(--mono);font-size:13px;flex:none;font-variant-numeric:tabular-nums}
+.nowbar .clk small{color:var(--fg3);font-size:11px;margin-left:4px}
+@keyframes nowPulse{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.nowbar .dot{animation:none}}
+@media (max-width:760px){.nowbar{gap:10px;padding-left:16px;padding-right:16px}.nowbar .prog,.nowbar .sep,.nowbar .next,.nowbar .ntag{display:none}}
+.seg button.on{background:var(--accent);color:var(--accent-fg)}
+.page{overflow-x:clip}
+.upnext{border-color:var(--accent-line)!important;background:var(--accent-soft)!important}
+.upnext .eyebrow{color:var(--accent)}
