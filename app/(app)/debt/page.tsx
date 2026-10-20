@@ -134,20 +134,35 @@ export default function DebtPage() {
       const sameName = (d: Debt) => d.person_name.trim().toLowerCase() === r.name.trim().toLowerCase();
       const existing = debts.rows.find(d => keyOf(d.carrier) === keyOf(carrier) && (r.agentId ? agentIdOf(d) === r.agentId : sameName(d) && !agentIdOf(d)))
         ?? (r.agentId ? debts.rows.find(d => keyOf(d.carrier) === keyOf(carrier) && sameName(d) && !agentIdOf(d)) : undefined);
-      const rec = existing ? recovered(existing.id) : 0;
-      // Original never goes down; if the balance grew past it, the original rises to match.
-      let orig = Math.max(r.original, r.current, Number(existing?.original_amount ?? 0));
-      if (orig - r.current < rec) orig = r.current + rec;
-      const pay = Math.round((orig - r.current - rec) * 100) / 100;
+      const x = r as typeof r & { gross?: number; credit?: number | null; exact?: boolean };
+      // Sheet imports (net chargeback): the net IS the debt. Clear any balance-matching entries an
+      // earlier import added, so only payments you recorded yourself count against it.
+      if (existing && x.exact) {
+        const auto = pays.rows.filter(p => p.debt_id === existing.id && p.method === `${carrier} report`);
+        for (const p of auto) await pays.remove(p.id);
+      }
+      const rec = existing ? pays.rows.filter(p => p.debt_id === existing.id && !(x.exact && p.method === `${carrier} report`)).reduce((s, p) => s + Number(p.amount), 0) : 0;
+      let orig: number, pay: number;
+      if (x.exact) { orig = Math.round((r.current + rec) * 100) / 100; pay = 0; }
+      else {
+        // Original never goes down; if the balance grew past it, the original rises to match.
+        orig = Math.max(r.original, r.current, Number(existing?.original_amount ?? 0));
+        if (orig - r.current < rec) orig = r.current + rec;
+        pay = Math.round((orig - r.current - rec) * 100) / 100;
+      }
       const docs = [{ ...(r.agentId ? { agent_id: r.agentId } : {}), as_of: asOf, source: `${carrier} report` }];
-      const credit = (r as { credit?: number | null }).credit;
+      const credit = x.credit;
+      const note = x.exact
+        ? `${carrier} report as of ${fmtDate(asOf)}: net chargeback ${money(r.current)}${x.gross != null ? ` (rolled up ${money(x.gross)}${credit != null ? `, credits ${money(credit)}` : ''})` : ''}.`
+        : `${r.agentId ? `Agent ID ${r.agentId}. ` : ''}${carrier} report as of ${fmtDate(asOf)}: original ${money(r.original)}, still owed ${money(r.current)}.`;
       const row = { person_name: r.name, carrier, original_amount: orig, documents: docs,
+        ...(x.exact ? { notes: existing?.notes && !existing.notes.includes(`${carrier} report`) ? `${existing.notes}\n${note}` : note } : {}),
         status: r.current <= 0.004 ? 'Paid' : existing && !['Paid', 'Closed'].includes(existing.status) ? existing.status : 'Verified' } as Partial<Debt>;
       let id = existing?.id;
       if (existing) { if (await debts.update(existing.id, row)) updated++; }
       else {
         const made = await debts.create({ ...row, compensation_action_authorized: false,
-          notes: `${r.agentId ? `Agent ID ${r.agentId}. ` : ''}${carrier} report as of ${fmtDate(asOf)}: original ${money(r.original)}${credit != null ? `, credits ${money(credit)}` : ''}, still owed ${money(r.current)}.` } as Partial<Debt>);
+          notes: note } as Partial<Debt>);
         if (made) { added++; id = made.id; }
       }
       if (id && pay > 0.004) await pays.create({ debt_id: id, amount: pay, paid_on: asOf, method: `${carrier} report`, notes: 'Recovered per carrier report' } as Partial<Pay>);
@@ -219,7 +234,7 @@ export default function DebtPage() {
           {impErr && <div className="rb-err" role="alert">{impErr}</div>}
           <div className="toolbar" style={{ margin: 0 }}>
             <span className="hint" style={{ margin: 0, flex: 1 }}>{parsed?.rows.length
-              ? `${parsed.rows.length} agents · ${money(parsed.rows.reduce((s, r) => s + r.current, 0))} owed now · ${money(parsed.rows.reduce((s, r) => s + r.original, 0))} original.${parsed.skipped.length ? ` ${parsed.skipped.length} without amounts will be skipped (${parsed.skipped.join(', ')}).` : ''}${parsed.settled.length ? ` ${parsed.settled.length} owe nothing and won’t be added.` : ''} Anyone already listed for this carrier gets updated instead of duplicated.`
+              ? `${parsed.rows.length} agents · ${money(parsed.rows.reduce((s, r) => s + r.current, 0))} ${sheet?.rows.length ? 'net chargebacks' : `owed now · ${money(parsed.rows.reduce((s, r) => s + r.original, 0))} original`}.${parsed.skipped.length ? ` ${parsed.skipped.length} without amounts will be skipped (${parsed.skipped.join(', ')}).` : ''}${parsed.settled.length ? ` ${parsed.settled.length} owe nothing and won’t be added.` : ''} Anyone already listed for this carrier gets updated instead of duplicated.`
               : 'Nothing found yet.'}</span>
             <button className="btn sm ghost" onClick={() => setImp(null)}>Cancel</button>
             <button className="btn sm primary" disabled={importing || !parsed?.rows.length} onClick={runImport}>{importing ? 'Importing…' : 'Import'}</button>

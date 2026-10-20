@@ -67,7 +67,7 @@ export function parseDebtSheet(text: string) {
   const origI = col(/rolled|original|chargeback|debt/, /net|credit|paid/);
   const creditI = col(/credit|adjust/);
   if (nameI < 0 || owedI < 0) return null;
-  const lines: (DebtLine & { credit: number | null })[] = [];
+  const lines: (DebtLine & { credit: number | null; gross: number; exact: true })[] = [];
   const settled: string[] = [];
   for (const r of rows.slice(1)) {
     const name = (r[nameI] ?? '').trim();
@@ -76,7 +76,8 @@ export function parseDebtSheet(text: string) {
     const orig = origI >= 0 ? money(r[origI]) ?? owed : owed;
     const nice = name === name.toLowerCase() || name === name.toUpperCase() ? titleCase(name) : name;
     if (owed <= 0.004) { settled.push(nice); continue; }
-    lines.push({ name: nice, agentId: idI >= 0 ? (r[idI] ?? '').trim() : '', current: owed, original: Math.max(orig, owed), credit: creditI >= 0 ? money(r[creditI]) : null });
+    // The debt IS the net figure; the rolled-up amount and credits are kept only as notes.
+    lines.push({ name: nice, agentId: idI >= 0 ? (r[idI] ?? '').trim() : '', current: owed, original: owed, gross: orig, credit: creditI >= 0 ? money(r[creditI]) : null, exact: true });
   }
   return { rows: lines, settled, headers: rows[0] ?? [] };
 }
