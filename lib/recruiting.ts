@@ -78,10 +78,9 @@ export interface AgendaItem {
 
 /** Pipeline lanes, left to right. */
 export const LANES: { key: string; label: string; statuses: RecruitStatus[] }[] = [
-  { key: 'booked', label: 'Booked', statuses: ['New', 'Scheduled'] },
-  { key: 'talked', label: 'Talked · needs a manager', statuses: ['Call Completed'] },
-  { key: 'assigned', label: 'Assigned', statuses: ['Manager Assigned'] },
-  { key: 'chat', label: 'In group chat', statuses: ['Group Chat Created'] },
+  // Talked-but-not-assigned stays in Booked (flagged) until a manager is picked.
+  { key: 'booked', label: 'Booked', statuses: ['New', 'Scheduled', 'Call Completed'] },
+  { key: 'assigned', label: 'Assigned', statuses: ['Manager Assigned', 'Group Chat Created'] },
   { key: 'missed', label: 'Didn’t connect', statuses: ['No Show', 'Reschedule', 'Follow-up Needed'] },
 ];
 export const CLOSED: RecruitStatus[] = ['Handed Off', 'Not Interested', 'Not Qualified'];

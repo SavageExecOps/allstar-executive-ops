@@ -74,7 +74,8 @@ export default function Recruiting() {
         <div className="lanes">
           {LANES.map(lane => {
             const items = recruits.filter(r => lane.statuses.includes(r.status))
-              .sort((a, b) => (a.appointment_at ?? a.created_at).localeCompare(b.appointment_at ?? b.created_at));
+              // Talked-and-waiting-for-a-manager first, then by call time.
+              .sort((a, b) => Number(b.status === 'Call Completed') - Number(a.status === 'Call Completed') || (a.appointment_at ?? a.created_at).localeCompare(b.appointment_at ?? b.created_at));
             return (
               <section key={lane.key} className={`lane lane-${lane.key}`} aria-label={lane.label}>
                 <header><span>{lane.label}</span><span className="n">{items.length}</span></header>
@@ -154,7 +155,8 @@ function RecruitCard({ r, managers, onOpen }: { r: Recruit; managers: Manager[];
         {r.other_agency === 'Yes' && <span className="pill crit">Other agency</span>}
         {r.source === 'iClosed' && r.status === 'Scheduled' && <span>iClosed</span>}
       </span>
-      {m && <span className="rcard-mgr">→ {m.name}{r.group_chat_confirmed ? ' · chat ✓' : ''}</span>}
+      {r.status === 'Call Completed' && <span className="pill gold" style={{ alignSelf: 'flex-start' }}>Talked · assign a manager</span>}
+      {m && <span className="rcard-mgr">→ {m.name}</span>}
     </button>
   );
 }
