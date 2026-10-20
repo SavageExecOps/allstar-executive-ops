@@ -5,7 +5,7 @@ import { ModuleHead, RecordBoard, StatusPill, type Field } from '@/components/Re
 import { useData } from '@/components/DataProvider';
 import { money, useTable, type Row } from '@/lib/useTable';
 import { fmtDate, today } from '@/lib/time';
-import { parseDebtReport } from '@/lib/debtImport';
+import { parseDebtReport, parseDebtSheet } from '@/lib/debtImport';
 
 type Debt = Row & { person_name: string; carrier: string | null; original_amount: number | null; status: string; last_contact_at: string | null; follow_up_date: string | null; notes: string | null; compensation_action_authorized: boolean; documents?: { agent_id?: string; as_of?: string }[] | null };
 type Pay = Row & { debt_id: string; amount: number; paid_on: string; method: string | null; notes: string | null };
@@ -117,7 +117,11 @@ export default function DebtPage() {
   const byCarrier = Array.from(carriers.values()).map(c => ({ ...c, ...sumUp(c.list) }))
     .sort((a, b) => (a.name === NO_CARRIER ? 1 : 0) - (b.name === NO_CARRIER ? 1 : 0) || b.balance - a.balance || a.name.localeCompare(b.name));
   const total = sumUp(debts.rows);
-  const parsed = imp ? parseDebtReport(imp.text) : null;
+  // A sheet with a header row (CSV or pasted from Sheets), or the one-value-per-line report format.
+  const sheet = imp && /^[^\n]*(,|\t)[^\n]*\n/.test(imp.text.trim() + '\n') ? parseDebtSheet(imp.text) : null;
+  const parsed = !imp ? null : sheet && sheet.rows.length
+    ? { rows: sheet.rows, skipped: [] as string[], settled: sheet.settled, asOf: null as string | null }
+    : { ...parseDebtReport(imp.text), settled: [] as string[] };
 
   async function runImport() {
     if (!imp || !parsed?.rows.length) return;
@@ -127,27 +131,30 @@ export default function DebtPage() {
     setImporting(true);
     let added = 0, updated = 0;
     for (const r of parsed.rows) {
-      const existing = debts.rows.find(d => agentIdOf(d) === r.agentId && keyOf(d.carrier) === keyOf(carrier));
+      const sameName = (d: Debt) => d.person_name.trim().toLowerCase() === r.name.trim().toLowerCase();
+      const existing = debts.rows.find(d => keyOf(d.carrier) === keyOf(carrier) && (r.agentId ? agentIdOf(d) === r.agentId : sameName(d) && !agentIdOf(d)))
+        ?? (r.agentId ? debts.rows.find(d => keyOf(d.carrier) === keyOf(carrier) && sameName(d) && !agentIdOf(d)) : undefined);
       const rec = existing ? recovered(existing.id) : 0;
       // Original never goes down; if the balance grew past it, the original rises to match.
       let orig = Math.max(r.original, r.current, Number(existing?.original_amount ?? 0));
       if (orig - r.current < rec) orig = r.current + rec;
       const pay = Math.round((orig - r.current - rec) * 100) / 100;
-      const docs = [{ agent_id: r.agentId, as_of: asOf, source: `${carrier} report` }];
+      const docs = [{ ...(r.agentId ? { agent_id: r.agentId } : {}), as_of: asOf, source: `${carrier} report` }];
+      const credit = (r as { credit?: number | null }).credit;
       const row = { person_name: r.name, carrier, original_amount: orig, documents: docs,
         status: r.current <= 0.004 ? 'Paid' : existing && !['Paid', 'Closed'].includes(existing.status) ? existing.status : 'Verified' } as Partial<Debt>;
       let id = existing?.id;
       if (existing) { if (await debts.update(existing.id, row)) updated++; }
       else {
         const made = await debts.create({ ...row, compensation_action_authorized: false,
-          notes: `Agent ID ${r.agentId}. ${carrier} report as of ${fmtDate(asOf)}: original debt ${money(r.original)}, balance ${money(r.current)}.` } as Partial<Debt>);
+          notes: `${r.agentId ? `Agent ID ${r.agentId}. ` : ''}${carrier} report as of ${fmtDate(asOf)}: original ${money(r.original)}${credit != null ? `, credits ${money(credit)}` : ''}, still owed ${money(r.current)}.` } as Partial<Debt>);
         if (made) { added++; id = made.id; }
       }
       if (id && pay > 0.004) await pays.create({ debt_id: id, amount: pay, paid_on: asOf, method: `${carrier} report`, notes: 'Recovered per carrier report' } as Partial<Pay>);
     }
     setImporting(false);
     setImp(null);
-    toast(`Imported ${parsed.rows.length} from ${carrier}: ${added} new, ${updated} updated.${parsed.skipped.length ? ` Skipped (no amounts): ${parsed.skipped.join(', ')}.` : ''}`);
+    toast(`Imported ${parsed.rows.length} from ${carrier}: ${added} new, ${updated} updated.${parsed.skipped.length ? ` Skipped (no amounts): ${parsed.skipped.join(', ')}.` : ''}${parsed.settled.length ? ` ${parsed.settled.length} owe nothing, not added.` : ''}`);
   }
   const [impErr, setImpErr] = useState<string | null>(null);
 
@@ -206,12 +213,13 @@ export default function DebtPage() {
             <div className="field"><label htmlFor="di-asof">Balances as of</label>
               <input id="di-asof" type="date" value={imp.asOf || parsed?.asOf || ''} onChange={e => setImp({ ...imp, asOf: e.target.value })} /></div>
           </div>
-          <div className="field"><label htmlFor="di-text">Paste the report (name, agent ID, current balance, original amount)</label>
+          <div className="field"><label htmlFor="di-text">Paste the report, or upload the CSV</label>
+            <input type="file" accept=".csv,.tsv,.txt,text/csv" aria-label="Upload CSV" onChange={async e => { const f = e.target.files?.[0]; if (f) setImp({ ...imp, text: await f.text() }); }} style={{ fontSize: 12.5 }} />
             <textarea id="di-text" rows={7} value={imp.text} onChange={e => setImp({ ...imp, text: e.target.value })} placeholder={'VIRGINIA BERGSTROM\n0Q8MM\n-1008.73\n-1320.47'} /></div>
           {impErr && <div className="rb-err" role="alert">{impErr}</div>}
           <div className="toolbar" style={{ margin: 0 }}>
             <span className="hint" style={{ margin: 0, flex: 1 }}>{parsed?.rows.length
-              ? `${parsed.rows.length} agents · ${money(parsed.rows.reduce((s, r) => s + r.current, 0))} owed now · ${money(parsed.rows.reduce((s, r) => s + r.original, 0))} original.${parsed.skipped.length ? ` ${parsed.skipped.length} without amounts will be skipped (${parsed.skipped.join(', ')}).` : ''} Same agent ID + carrier updates instead of duplicating.`
+              ? `${parsed.rows.length} agents · ${money(parsed.rows.reduce((s, r) => s + r.current, 0))} owed now · ${money(parsed.rows.reduce((s, r) => s + r.original, 0))} original.${parsed.skipped.length ? ` ${parsed.skipped.length} without amounts will be skipped (${parsed.skipped.join(', ')}).` : ''}${parsed.settled.length ? ` ${parsed.settled.length} owe nothing and won’t be added.` : ''} Anyone already listed for this carrier gets updated instead of duplicated.`
               : 'Nothing found yet.'}</span>
             <button className="btn sm ghost" onClick={() => setImp(null)}>Cancel</button>
             <button className="btn sm primary" disabled={importing || !parsed?.rows.length} onClick={runImport}>{importing ? 'Importing…' : 'Import'}</button>
