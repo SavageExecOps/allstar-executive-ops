@@ -5,8 +5,9 @@ import { ModuleHead, RecordBoard, StatusPill, type Field } from '@/components/Re
 import { useData } from '@/components/DataProvider';
 import { money, useTable, type Row } from '@/lib/useTable';
 import { fmtDate, today } from '@/lib/time';
+import { parseDebtReport } from '@/lib/debtImport';
 
-type Debt = Row & { person_name: string; carrier: string | null; original_amount: number | null; status: string; last_contact_at: string | null; follow_up_date: string | null; notes: string | null; compensation_action_authorized: boolean };
+type Debt = Row & { person_name: string; carrier: string | null; original_amount: number | null; status: string; last_contact_at: string | null; follow_up_date: string | null; notes: string | null; compensation_action_authorized: boolean; documents?: { agent_id?: string; as_of?: string }[] | null };
 type Pay = Row & { debt_id: string; amount: number; paid_on: string; method: string | null; notes: string | null };
 type Plan = Row & { debt_id: string; installment_amount: number | null; frequency: string | null; start_date: string | null; status: string };
 
@@ -14,7 +15,7 @@ const STATUSES = ['Identified', 'Verified', 'Contact Required', 'Contacted', 'Pa
 const CLOSED = ['Paid', 'Closed'];
 const fields: Field[] = [
   { key: 'person_name', label: 'Who owes', required: true },
-  { key: 'carrier', label: 'Carrier' },
+  { key: 'carrier', label: 'Carrier', placeholder: 'Mutual of Omaha, Americo…', hint: 'Spelled the same each time so the carrier totals add up. Existing names are matched for you.' },
   { key: 'original_amount', label: 'Amount owed', type: 'money', hint: 'Leave blank until it’s confirmed. Never guess.' },
   { key: 'status', label: 'Status', type: 'select', options: STATUSES, required: true },
   { key: 'last_contact_at', label: 'Last contact', type: 'date' },
@@ -79,7 +80,12 @@ function Ledger({ d, pays, plans, recovered, balance }: { d: Debt; pays: ReturnT
     );
   }
 
+const agentIdOf = (d: Debt) => (Array.isArray(d.documents) ? d.documents.find(x => x && x.agent_id)?.agent_id : undefined) ?? null;
+
 export default function DebtPage() {
+  const { toast } = useData();
+  const [imp, setImp] = useState<{ text: string; carrier: string; asOf: string } | null>(null);
+  const [importing, setImporting] = useState(false);
   const debts = useTable<Debt>('debts');
   const pays = useTable<Pay>('debt_payments', { col: 'paid_on', asc: false });
   const plans = useTable<Plan>('payment_plans');
@@ -88,6 +94,68 @@ export default function DebtPage() {
   const balance = (d: Debt) => d.original_amount == null ? null : Number(d.original_amount) - recovered(d.id);
   const open = debts.rows.filter(d => !CLOSED.includes(d.status));
   const month = t.slice(0, 7);
+
+  // Carrier totals. Names are matched case-insensitively so "americo" and "Americo" add up together.
+  const NO_CARRIER = 'No carrier';
+  const keyOf = (c: string | null) => (c ?? '').trim().toLowerCase() || NO_CARRIER.toLowerCase();
+  const carriers = new Map<string, { name: string; list: Debt[] }>();
+  for (const d of debts.rows) {
+    const k = keyOf(d.carrier);
+    if (!carriers.has(k)) carriers.set(k, { name: d.carrier?.trim() || NO_CARRIER, list: [] });
+    carriers.get(k)!.list.push(d);
+  }
+  const sumUp = (list: Debt[]) => {
+    const openList = list.filter(d => !CLOSED.includes(d.status));
+    return {
+      open: openList.length,
+      owed: list.reduce((s, d) => s + Number(d.original_amount ?? 0), 0),
+      recovered: list.reduce((s, d) => s + recovered(d.id), 0),
+      balance: openList.reduce((s, d) => s + (balance(d) ?? 0), 0),
+      unconfirmed: openList.filter(d => d.original_amount == null).length,
+    };
+  };
+  const byCarrier = Array.from(carriers.values()).map(c => ({ ...c, ...sumUp(c.list) }))
+    .sort((a, b) => (a.name === NO_CARRIER ? 1 : 0) - (b.name === NO_CARRIER ? 1 : 0) || b.balance - a.balance || a.name.localeCompare(b.name));
+  const total = sumUp(debts.rows);
+  const parsed = imp ? parseDebtReport(imp.text) : null;
+
+  async function runImport() {
+    if (!imp || !parsed?.rows.length) return;
+    const carrier = tidyCarrier(imp.carrier);
+    if (!carrier) { setImpErr('Pick which carrier this report is from.'); return; }
+    const asOf = imp.asOf || parsed.asOf || t;
+    setImporting(true);
+    let added = 0, updated = 0;
+    for (const r of parsed.rows) {
+      const existing = debts.rows.find(d => agentIdOf(d) === r.agentId && keyOf(d.carrier) === keyOf(carrier));
+      const rec = existing ? recovered(existing.id) : 0;
+      // Original never goes down; if the balance grew past it, the original rises to match.
+      let orig = Math.max(r.original, r.current, Number(existing?.original_amount ?? 0));
+      if (orig - r.current < rec) orig = r.current + rec;
+      const pay = Math.round((orig - r.current - rec) * 100) / 100;
+      const docs = [{ agent_id: r.agentId, as_of: asOf, source: `${carrier} report` }];
+      const row = { person_name: r.name, carrier, original_amount: orig, documents: docs,
+        status: r.current <= 0.004 ? 'Paid' : existing && !['Paid', 'Closed'].includes(existing.status) ? existing.status : 'Verified' } as Partial<Debt>;
+      let id = existing?.id;
+      if (existing) { if (await debts.update(existing.id, row)) updated++; }
+      else {
+        const made = await debts.create({ ...row, compensation_action_authorized: false,
+          notes: `Agent ID ${r.agentId}. ${carrier} report as of ${fmtDate(asOf)}: original debt ${money(r.original)}, balance ${money(r.current)}.` } as Partial<Debt>);
+        if (made) { added++; id = made.id; }
+      }
+      if (id && pay > 0.004) await pays.create({ debt_id: id, amount: pay, paid_on: asOf, method: `${carrier} report`, notes: 'Recovered per carrier report' } as Partial<Pay>);
+    }
+    setImporting(false);
+    setImp(null);
+    toast(`Imported ${parsed.rows.length} from ${carrier}: ${added} new, ${updated} updated.${parsed.skipped.length ? ` Skipped (no amounts): ${parsed.skipped.join(', ')}.` : ''}`);
+  }
+  const [impErr, setImpErr] = useState<string | null>(null);
+
+  const tidyCarrier = (c: unknown) => {
+    const v = String(c ?? '').trim().replace(/\s+/g, ' ');
+    if (!v) return null;
+    return byCarrier.find(x => x.name !== NO_CARRIER && x.name.toLowerCase() === v.toLowerCase())?.name ?? v;
+  };
 
   return (
     <>
@@ -100,19 +168,75 @@ export default function DebtPage() {
           { n: money(pays.rows.reduce((s, p) => s + Number(p.amount), 0)), l: 'Recovered all-time', tone: 'ok' },
           { n: open.filter(d => d.follow_up_date && d.follow_up_date <= t).length, l: 'Follow-ups due', tone: open.some(d => d.follow_up_date && d.follow_up_date <= t) ? 'crit' : '' },
         ]} />
+      {byCarrier.length > 0 && (
+        <section className="panel" style={{ marginBottom: 20 }}>
+          <div className="panel-h"><h2 className="sec">By carrier</h2></div>
+          <div className="scroll-x">
+            <table className="ttable carriers">
+              <thead><tr><th>Carrier</th><th>Open</th><th>Owed</th><th>Recovered</th><th>Balance</th></tr></thead>
+              <tbody>
+                {byCarrier.map(c => (
+                  <tr key={c.name}>
+                    <td className="tt">{c.name}</td>
+                    <td>{c.open}</td>
+                    <td>{money(c.owed)}{c.unconfirmed ? <span className="hint" style={{ display: 'block', margin: 0 }}>+{c.unconfirmed} not confirmed</span> : null}</td>
+                    <td className="ok-n">{money(c.recovered)}</td>
+                    <td className="bal-n">{money(c.balance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr><td className="tt">Total</td><td>{total.open}</td><td>{money(total.owed)}</td><td className="ok-n">{money(total.recovered)}</td><td className="bal-n">{money(total.balance)}</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+      )}
+      {imp === null ? (
+        <div className="toolbar" style={{ justifyContent: 'flex-end' }}>
+          <button className="btn sm" onClick={() => { setImpErr(null); setImp({ text: '', carrier: '', asOf: '' }); }}>Import carrier report</button>
+        </div>
+      ) : (
+        <section className="panel qb-import" style={{ marginBottom: 20 }}>
+          <span className="eyebrow" style={{ margin: 0 }}>Import a carrier debt report</span>
+          <div className="row2">
+            <div className="field"><label htmlFor="di-carrier">Carrier *</label>
+              <input id="di-carrier" type="text" list="di-carriers" value={imp.carrier} onChange={e => { setImpErr(null); setImp({ ...imp, carrier: e.target.value }); }} placeholder="Which carrier is this from?" />
+              <datalist id="di-carriers">{byCarrier.filter(c => c.name !== NO_CARRIER).map(c => <option key={c.name} value={c.name} />)}</datalist></div>
+            <div className="field"><label htmlFor="di-asof">Balances as of</label>
+              <input id="di-asof" type="date" value={imp.asOf || parsed?.asOf || ''} onChange={e => setImp({ ...imp, asOf: e.target.value })} /></div>
+          </div>
+          <div className="field"><label htmlFor="di-text">Paste the report (name, agent ID, current balance, original amount)</label>
+            <textarea id="di-text" rows={7} value={imp.text} onChange={e => setImp({ ...imp, text: e.target.value })} placeholder={'VIRGINIA BERGSTROM\n0Q8MM\n-1008.73\n-1320.47'} /></div>
+          {impErr && <div className="rb-err" role="alert">{impErr}</div>}
+          <div className="toolbar" style={{ margin: 0 }}>
+            <span className="hint" style={{ margin: 0, flex: 1 }}>{parsed?.rows.length
+              ? `${parsed.rows.length} agents · ${money(parsed.rows.reduce((s, r) => s + r.current, 0))} owed now · ${money(parsed.rows.reduce((s, r) => s + r.original, 0))} original.${parsed.skipped.length ? ` ${parsed.skipped.length} without amounts will be skipped (${parsed.skipped.join(', ')}).` : ''} Same agent ID + carrier updates instead of duplicating.`
+              : 'Nothing found yet.'}</span>
+            <button className="btn sm ghost" onClick={() => setImp(null)}>Cancel</button>
+            <button className="btn sm primary" disabled={importing || !parsed?.rows.length} onClick={runImport}>{importing ? 'Importing…' : 'Import'}</button>
+          </div>
+        </section>
+      )}
       <section className="panel">
         <RecordBoard t={debts} noun="debt" fields={fields} titleOf={d => d.person_name}
           defaults={{ status: 'Identified', compensation_action_authorized: false } as Partial<Debt>}
           groups={[
             { label: 'Open', filter: d => !CLOSED.includes(d.status) },
             { label: 'Follow up today', filter: d => !CLOSED.includes(d.status) && !!d.follow_up_date && d.follow_up_date <= t },
+            ...byCarrier.filter(c => c.open && byCarrier.length > 1).map(c => ({ label: c.name, filter: (d: Debt) => !CLOSED.includes(d.status) && keyOf(d.carrier) === keyOf(c.name === NO_CARRIER ? null : c.name) })),
             { label: 'Paid & closed', filter: d => CLOSED.includes(d.status) },
           ]}
-          validate={(n, prev) => n.status === 'Paid' && prev && n.original_amount != null && Number(n.original_amount) - recovered(prev.id) > 0.001
-            ? `Payments recorded don’t cover the amount yet (${money(Number(n.original_amount) - recovered(prev.id))} left). Record the payment first.` : null}
+          validate={(n, prev) => {
+            (n as Record<string, unknown>).carrier = tidyCarrier(n.carrier);
+            return n.status === 'Paid' && prev && n.original_amount != null && Number(n.original_amount) - recovered(prev.id) > 0.001
+              ? `Payments recorded don’t cover the amount yet (${money(Number(n.original_amount) - recovered(prev.id))} left). Record the payment first.` : null;
+          }}
           extra={d => <Ledger d={d} pays={pays} plans={plans} recovered={recovered} balance={balance} />}
           columns={[
             { label: 'Who', key: 'person_name' },
+            { label: 'Carrier', render: d => d.carrier ?? '—' },
+            { label: 'Agent ID', render: d => agentIdOf(d) ?? '—' },
             { label: 'Owed', render: d => d.original_amount == null ? <span className="pill conf">Amount not confirmed</span> : money(d.original_amount) },
             { label: 'Recovered', render: d => money(recovered(d.id)) },
             { label: 'Balance', render: d => money(balance(d)) },

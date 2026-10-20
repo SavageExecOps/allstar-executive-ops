@@ -427,8 +427,9 @@ a.btn.primary{color:var(--accent-fg)}
 .ph .eyebrow{letter-spacing:.24em;margin-bottom:10px}
 .ph .sub{color:var(--fg2)}
 /* Faint Pegasus behind every page header (dark only; it's a white mark). */
-.page::before{content:"";position:absolute;right:-30px;top:-20px;width:min(460px,48vw);aspect-ratio:601/534;background:url(/allstar-pegasus-white.png) no-repeat right top/contain;opacity:.05;pointer-events:none;z-index:0}
-.page>*{position:relative;z-index:1}
+/* z-index -1 paints it behind the content without making .page a stacking context,
+   so drawers opened from inside a page still sit above the Now bar. */
+.page::before{content:"";position:absolute;right:-30px;top:-20px;width:min(460px,48vw);aspect-ratio:601/534;background:url(/allstar-pegasus-white.png) no-repeat right top/contain;opacity:.05;pointer-events:none;z-index:-1}
 :root[data-theme="light"] .page::before{display:none}
 .panel{border-radius:var(--r)}
 h2.sec{letter-spacing:.14em}
@@ -460,3 +461,8 @@ h2.sec{letter-spacing:.14em}
 .page{overflow-x:clip}
 .upnext{border-color:var(--accent-line)!important;background:var(--accent-soft)!important}
 .upnext .eyebrow{color:var(--accent)}
+.ttable.carriers td,.ttable.carriers th{font-variant-numeric:tabular-nums}
+.ttable.carriers th:not(:first-child),.ttable.carriers td:not(:first-child){text-align:right}
+.ttable.carriers tfoot td{border-top:1px solid var(--accent-line);border-bottom:0;font-weight:700;font-family:var(--display);font-stretch:112%}
+.ttable.carriers .ok-n{color:var(--ok)}
+.ttable.carriers .bal-n{color:var(--accent);font-weight:600}
