@@ -508,7 +508,7 @@ h2.sec{letter-spacing:.14em}
 .ss-fog.f2{animation:ssFog2 1.6s .1s cubic-bezier(.3,0,.3,1) both;transform:scaleX(-1)}
 .ss-fog.f3{animation:ssFog3 1.6s .2s cubic-bezier(.3,0,.3,1) both;filter:blur(6px)}
 .ss-glow{position:absolute;left:-10%;top:30%;width:70%;height:50%;border-radius:50%;background:radial-gradient(closest-side,rgba(201,167,102,.22),transparent);opacity:0;animation:ssGlow 1.4s .2s ease both}
-.ss-ship{position:absolute;left:0;bottom:8vh;height:78vh;width:auto;opacity:0;filter:brightness(.55) contrast(1.1);animation:ssShip 1.1s .35s cubic-bezier(.55,0,.35,1) both}
+.ss-ship{position:absolute;left:0;bottom:6vh;height:82vh;width:auto;opacity:0;transform-origin:50% 90%;will-change:transform,filter,opacity;animation:ssShip 1.2s .12s cubic-bezier(.45,0,.4,1) both}
 .ss-water{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;mix-blend-mode:screen;opacity:0;transform:scale(1.12);transform-origin:50% 100%}
 .ss-water.on{opacity:1;transition:opacity .08s}
 .ss-out .ss-dark{position:absolute;inset:0;background:#050505}
@@ -520,7 +520,7 @@ h2.sec{letter-spacing:.14em}
 @keyframes ssFog2{0%{opacity:0;transform:scaleX(-1) translateX(14%) scale(1.15)}40%{opacity:.5}100%{opacity:.4;transform:scaleX(-1) translateX(-8%) scale(1.3)}}
 @keyframes ssFog3{0%{opacity:0;transform:translateY(8%) scale(1.3)}50%{opacity:.45}100%{opacity:.6;transform:translateY(-4%) scale(1.45)}}
 @keyframes ssGlow{0%{opacity:0}50%{opacity:1}100%{opacity:.3;transform:translateX(40%)}}
-@keyframes ssShip{0%{opacity:0;transform:translateX(-60vw) scale(.8);filter:brightness(.3) blur(8px)}25%{opacity:1}75%{filter:brightness(.6) blur(1px)}100%{opacity:1;transform:translateX(105vw) scale(1.15);filter:brightness(.5) blur(5px)}}
+@keyframes ssShip{0%{opacity:0;transform:translateX(-55vw) scale(.85) rotate(-2deg);filter:brightness(.25) blur(10px)}20%{opacity:.9}45%{transform:translateX(25vw) scale(1) rotate(2deg);filter:brightness(.7) blur(1px)}70%{transform:translateX(60vw) scale(1.08) rotate(-1.5deg);filter:brightness(.75) blur(0)}100%{opacity:1;transform:translateX(110vw) scale(1.18) rotate(1deg);filter:brightness(.5) blur(6px)}}
 @keyframes ssUndark{to{opacity:0}}
 @keyframes ssDrain{0%{transform:scale(1.12) translateY(0)}60%{opacity:1}100%{opacity:0;transform:scale(1.12) translateY(18%)}}
 @media (prefers-reduced-motion:reduce){.ss-stage{display:none}}

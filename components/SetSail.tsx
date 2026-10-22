@@ -6,8 +6,7 @@ const KEY = 'aeo.sail';
 const SPLASH = '/sail/splash.mp4';
 const SPLASH_WEBM = '/sail/splash.webm';
 const Sources = () => <><source src={SPLASH} type="video/mp4" /><source src={SPLASH_WEBM} type="video/webm" /></>;
-// Drop a clean, transparent ship PNG at public/sail/ship.png and set this to '/sail/ship.png'.
-const SHIP: string | null = null;
+const SHIP: string | null = '/sail/ship.webp';
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 // Timeline (ms): fog rolls in, the water hits at HIT, we change pages at GO and the
@@ -46,7 +45,14 @@ export function SetSailIntro({ onDone }: { onDone: () => void }) {
 
 /** Keeps the splash in the browser cache so it plays instantly. Render it on the page with the button. */
 export function SetSailPreload() {
-  return <video muted playsInline preload="auto" aria-hidden="true" style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}><Sources /></video>;
+  const hide = { position: 'absolute' as const, width: 1, height: 1, opacity: 0, pointerEvents: 'none' as const };
+  return <>
+    <video muted playsInline preload="auto" aria-hidden="true" style={hide}><Sources /></video>
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    {SHIP && <img src={SHIP} alt="" aria-hidden="true" style={hide} />}
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src="/sail/fog.webp" alt="" aria-hidden="true" style={hide} />
+  </>;
 }
 
 /** In the app shell: the splash keeps going over the new page, then drains away. */
