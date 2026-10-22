@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { ModuleHead, RecordBoard, type Field } from '@/components/RecordBoard';
-import { DmCounter, pct, sumLogs, useDmLogs, weekStart } from '@/components/DmCounter';
+import { DmCounter, useDmLogs, weekStart } from '@/components/DmCounter';
 import { useData } from '@/components/DataProvider';
 import { useOps } from '@/components/OpsData';
 import { money, useTable, type Row } from '@/lib/useTable';
@@ -40,36 +40,28 @@ export default function Scorecard() {
   const inPstamp = (s: string | null | undefined) => !!s && dayOf(s) >= from;
 
   const m = useMemo(() => {
-    const booked = sumLogs(dm.logs, from).booked;
-    const added = recruits.filter(r => inPstamp(r.created_at)).length;
-    const handed = recruits.filter(r => inPstamp(r.handed_off_at)).length;
-    const contracted = recruits.filter(r => inP(r.contracted_at)).length;
+    // Booked = recruits that came in (each one is a booked call). Assigned = recruits paired with a manager.
+    const booked = recruits.filter(r => inPstamp(r.created_at)).length;
+    const assigned = new Set(assignments.filter(a => inPstamp(a.assigned_at)).map(a => a.recruit_id)).size;
     const recovered = pays.rows.filter(x => inP(x.paid_on)).reduce((s, x) => s + Number(x.amount), 0);
     const ws = wins.rows.filter(w => inP(w.happened_on));
-    return { booked, added, handed, contracted, recovered, wins: ws };
+    return { booked, assigned, recovered, wins: ws };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dm.logs, recruits, pays.rows, wins.rows, from]);
+  }, [recruits, assignments, pays.rows, wins.rows, from]);
 
   const summary = [
     `${homeName} · Executive Ops scorecard · ${p.label}${period === 'all' ? '' : ` (since ${fmtDate(from)})`}`,
     '',
-    `CONTRACTED: ${m.contracted}`,
-    `• ${m.booked} calls booked from DMs`,
-    `• ${m.added} recruits added · ${m.handed} handed off to managers`,
+    `• ${m.booked} recruits booked`,
+    `• ${m.assigned} assigned to a manager`,
     m.recovered ? `• ${money(m.recovered)} recovered on debts` : '',
     ...(m.wins.length ? ['', 'WINS', ...m.wins.slice(0, 8).map(w => `• ${w.title}${w.value ? ` (${money(w.value)})` : ''}`)] : []),
   ].filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n');
 
-  const funnel: [number, string, string?][] = [
-    [m.booked, 'Booked from DMs'],
-    [m.added, 'Recruits added'],
-    [m.handed, 'Handed off', pct(m.handed, m.added)],
-  ];
-
   return (
     <>
       <ModuleHead eyebrow="Your numbers" title="Scorecard"
-        sub="The receipts. Recruits you bring in, hand off and get contracted. Bring this to your one-on-one." />
+        sub="Recruits booked and recruits assigned to a manager. Bring this to your one-on-one." />
       <div className="toolbar">
         <div className="seg" role="group" aria-label="Period">
           {PERIODS.map(x => <button key={x.key} className={period === x.key ? 'on' : ''} onClick={() => setPeriod(x.key)}>{x.label}</button>)}
@@ -77,13 +69,10 @@ export default function Scorecard() {
       </div>
       <div className="stack">
         <section className="panel">
-          <div className="score-hero">
-            <div className="score-main"><span className="score-n">{m.contracted}</span><span className="stat-l">Contracted · {pct(m.contracted, m.handed)} of handed off</span></div>
-            <div className="funnel">
-              {funnel.map(([n, l, c]) => <div key={l} className="stat"><span className="stat-n">{n}</span><span className="stat-l">{l}</span>{c && <span className="conv">{c} of added</span>}</div>)}
-            </div>
+          <div className="score-two">
+            <div className="score-box"><span className="score-n plain">{m.booked}</span><span className="stat-l">Recruits booked</span></div>
+            <div className="score-box gold"><span className="score-n">{m.assigned}</span><span className="stat-l">Assigned to a manager</span></div>
           </div>
-          <p className="hint">Contracted comes from the “Contracted on” date on each recruit. Fill it in when the manager confirms.</p>
         </section>
         <DmCounter dm={dm} />
         <div className="grid2">
