@@ -1,5 +1,6 @@
 'use client';
 
+import { PRIVATE } from '@/lib/notes';
 import { useEffect, useRef, useState } from 'react';
 import { useData } from './DataProvider';
 import { useOps } from './OpsData';
@@ -129,6 +130,7 @@ export function QuickAdd({ kind, onClose }: { kind: QuickKind; onClose: () => vo
   const [fu, setFu] = useState(addDays(today(), 1));
   const [noteType, setNoteType] = useState<string>('Quick note');
   const [pref, setPref] = useState('');
+  const [blur, setBlur] = useState(false);
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   useEsc(onClose);
@@ -149,7 +151,7 @@ export function QuickAdd({ kind, onClose }: { kind: QuickKind; onClose: () => vo
     else if (kind === 'note') {
       ok = pref
         ? await createPreference({ body: v, permanence: pref as 'Permanent' | 'Temporary', category: pref === 'Temporary' ? 'Restriction' : 'Scheduling' })
-        : await createNote({ body: v, note_type: noteType as never, department: dept === 'Operations' ? null : dept });
+        : await createNote({ body: v, note_type: noteType as never, department: blur ? PRIVATE : dept === 'Operations' ? null : dept });
     }
     setBusy(false);
     if (ok) { toast(kind === 'note' ? 'Note saved' : kind === 'project' ? 'Project created' : kind === 'wylie' ? 'Added for Wylie' : 'Added'); onClose(); }
@@ -180,7 +182,8 @@ export function QuickAdd({ kind, onClose }: { kind: QuickKind; onClose: () => vo
               <option value="">Regular note</option><option value="Permanent">Wylie preference · permanent</option><option value="Temporary">Wylie rule · temporary</option>
             </select>
             {!pref && <select aria-label="Note type" value={noteType} onChange={e => setNoteType(e.target.value)}>{NOTE_TYPES.map(d => <option key={d}>{d}</option>)}</select>}
-            {!pref && <select aria-label="Department" value={dept} onChange={e => setDept(e.target.value)}><option value="Operations">No department</option>{DEPARTMENTS.filter(d => d !== 'Operations').map(d => <option key={d}>{d}</option>)}</select>}
+            {!pref && !blur && <select aria-label="Department" value={dept} onChange={e => setDept(e.target.value)}><option value="Operations">No department</option>{DEPARTMENTS.filter(d => d !== 'Operations').map(d => <option key={d}>{d}</option>)}</select>}
+            {!pref && <label className="check"><input type="checkbox" checked={blur} onChange={e => setBlur(e.target.checked)} /> Blur until clicked</label>}
           </div>
         )}
         <div className="toolbar" style={{ margin: '14px 0 0', justifyContent: 'space-between' }}>

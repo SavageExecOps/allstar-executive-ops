@@ -466,3 +466,30 @@ h2.sec{letter-spacing:.14em}
 .ttable.carriers tfoot td{border-top:1px solid var(--accent-line);border-bottom:0;font-weight:700;font-family:var(--display);font-stretch:112%}
 .ttable.carriers .ok-n{color:var(--ok)}
 .ttable.carriers .bal-n{color:var(--accent);font-weight:600}
+/* Notes, cleaner */
+.notes-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.notes-bar input[type=text]{flex:0 1 280px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line-strong);background:transparent;border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--fg2);min-height:32px}
+.chips button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.notes-h{margin:6px 0 12px;color:var(--fg2)}
+.notes2{columns:3 300px;column-gap:14px;margin-bottom:22px}
+.note2{break-inside:avoid;margin-bottom:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.note2.pinned{border-color:var(--accent-line);background:var(--accent-soft)}
+.note2-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.note2-type{display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3)}
+.note2-type svg{width:12px;height:12px;stroke:var(--accent);fill:none;stroke-width:2}
+.note2-acts{display:flex;gap:2px;opacity:.55;transition:opacity .15s}
+.note2:hover .note2-acts,.note2:focus-within .note2-acts{opacity:1}
+.icon-btn{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;border-radius:6px;color:var(--fg2)}
+.icon-btn:hover{background:var(--sunk);color:var(--fg)}
+.icon-btn.on{color:var(--accent)}
+.icon-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
+.note2-body{margin:0;white-space:pre-wrap;line-height:1.55;font-size:14px}
+.note2-body.clamp{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.note2-blur{position:relative;display:block;width:100%;text-align:left;border:0;background:none;padding:0;color:inherit;min-height:64px;cursor:pointer}
+.note2-body.blurred{display:block;filter:blur(7px);user-select:none;max-height:120px;overflow:hidden}
+.note2-tap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12.5px;color:var(--fg2);letter-spacing:.04em}
+.note2-tap svg{width:14px;height:14px;stroke:var(--accent);fill:none;stroke-width:2}
+.note2-f{font-family:var(--mono);font-size:11px;color:var(--fg3)}
+@media (hover:none){.note2-acts{opacity:1}}

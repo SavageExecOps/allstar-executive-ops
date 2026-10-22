@@ -10,6 +10,7 @@ import { Icon, NAV } from './nav';
 import { BlockEditor, ProjectDrawer, QuickAdd, TaskDrawer } from './Overlays';
 import { NowBar } from './NowBar';
 import { isOpen, isWaiting } from '@/lib/tasks';
+import { isPrivate } from '@/lib/notes';
 
 type Layer = { kind: 'task' | 'project' | 'block'; id: string } | { kind: 'quick'; q: QuickKind } | null;
 
@@ -132,7 +133,7 @@ function Search() {
     ...tasks.filter(t => [t.title, t.notes, t.waiting_on, t.department, t.description].join(' ').toLowerCase().includes(s))
       .map(t => ({ k: t.status === 'Done' ? 'Done' : 'Task', l: t.title, go: () => openTask(t.id) })),
     ...projects.filter(p => [p.name, p.description].join(' ').toLowerCase().includes(s)).map(p => ({ k: 'Project', l: p.name, go: () => editProject(p.id) })),
-    ...notes.filter(n => n.body.toLowerCase().includes(s)).map(n => ({ k: 'Note', l: n.body.slice(0, 90), go: () => router.push('/notes') })),
+    ...notes.filter(n => !isPrivate(n) && n.body.toLowerCase().includes(s)).map(n => ({ k: 'Note', l: n.body.slice(0, 90), go: () => router.push('/notes') })),
     ...preferences.filter(n => n.body.toLowerCase().includes(s)).map(n => ({ k: 'Wylie', l: n.body.slice(0, 90), go: () => router.push('/notes') })),
     ...NAV.filter(n => 'label' in n && n.label.toLowerCase().includes(s)).map(n => ({ k: 'Go to', l: (n as { label: string }).label, go: () => router.push((n as { href: string }).href) })),
   ].slice(0, 12);
