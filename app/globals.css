@@ -466,3 +466,15 @@ h2.sec{letter-spacing:.14em}
 .ttable.carriers tfoot td{border-top:1px solid var(--accent-line);border-bottom:0;font-weight:700;font-family:var(--display);font-stretch:112%}
 .ttable.carriers .ok-n{color:var(--ok)}
 .ttable.carriers .bal-n{color:var(--accent);font-weight:600}
+/* Payment methods: blurred until clicked */
+.pm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.pm{border:1px solid var(--line);border-radius:var(--r);background:var(--sunk);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.pm.on{border-color:var(--accent-line)}
+.pm-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pm-name{font-family:var(--display);font-stretch:112%;font-weight:700}
+.pm-body{position:relative;display:block;width:100%;text-align:left;background:none;border:0;padding:0;min-height:44px;color:inherit}
+.pm-secret{display:flex;flex-direction:column;gap:4px;font-family:var(--mono);font-size:13px;filter:blur(7px);user-select:none;transition:filter .2s}
+.pm.on .pm-secret{filter:none;user-select:text}
+.pm-notes{font-family:var(--body);font-size:12.5px;color:var(--fg2);white-space:pre-wrap}
+.pm-tap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;letter-spacing:.06em;color:var(--fg2)}
+@media (prefers-reduced-motion:reduce){.pm-secret{transition:none}}
