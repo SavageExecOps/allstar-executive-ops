@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useData } from '@/components/DataProvider';
 import { useUI } from '@/components/UI';
-import { PaymentMethods } from '@/components/PaymentMethods';
 import { NOTE_TYPES, type Preference } from '@/lib/types';
 import { fmtDate, fmtStamp } from '@/lib/time';
 
@@ -45,8 +44,6 @@ export default function Notes() {
         </div>
         <div className="qa"><button className="btn primary" onClick={() => quickAdd('note')}>New note</button></div>
       </div>
-
-      <PaymentMethods />
 
       <section className="panel" style={{ marginBottom: 20 }}>
         <div className="panel-h"><h2 className="sec">Wylie executive preferences</h2></div>
