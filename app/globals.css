@@ -508,7 +508,7 @@ h2.sec{letter-spacing:.14em}
 .ss-fog.f2{animation:ssFog2 2s .1s cubic-bezier(.3,0,.3,1) both;transform:scaleX(-1)}
 .ss-fog.f3{animation:ssFog3 2s .2s cubic-bezier(.3,0,.3,1) both;filter:blur(6px)}
 .ss-glow{position:absolute;left:-10%;top:30%;width:70%;height:50%;border-radius:50%;background:radial-gradient(closest-side,rgba(201,167,102,.22),transparent);opacity:0;animation:ssGlow 2s .2s ease both}
-.ss-ship{position:absolute;left:0;bottom:4vh;height:84vh;width:auto;opacity:0;transform-origin:50% 90%;will-change:transform,filter,opacity;animation:ssShip 1.9s .1s cubic-bezier(.4,0,.5,1) both}
+.ss-ship{position:absolute;left:0;bottom:4vh;height:84vh;width:auto;opacity:0;filter:brightness(.7);transform:translate3d(-60vw,0,0);will-change:transform,opacity;backface-visibility:hidden;animation:ssShip 1.9s .1s linear both}
 .ss-out{background:transparent;animation:none;pointer-events:auto}
 .ss-out .ss-dark{position:absolute;inset:0;background:#050505;animation:ssUndark .8s .1s ease both}
 .ss-out .ss-fog.o1{opacity:.55;animation:ssClear1 1.4s ease-out both}
@@ -518,7 +518,7 @@ h2.sec{letter-spacing:.14em}
 @keyframes ssFog2{0%{opacity:0;transform:scaleX(-1) translateX(14%) scale(1.15)}35%{opacity:.5}100%{opacity:.45;transform:scaleX(-1) translateX(-10%) scale(1.3)}}
 @keyframes ssFog3{0%{opacity:0;transform:translateY(8%) scale(1.3)}45%{opacity:.45}100%{opacity:.65;transform:translateY(-4%) scale(1.45)}}
 @keyframes ssGlow{0%{opacity:0}50%{opacity:1}100%{opacity:.3;transform:translateX(40%)}}
-@keyframes ssShip{0%{opacity:0;transform:translateX(-60vw) scale(.85) rotate(-2deg);filter:brightness(.2) blur(10px)}18%{opacity:.85;filter:brightness(.45) blur(4px)}40%{transform:translateX(15vw) scale(.97) rotate(1.5deg);filter:brightness(.75) blur(0)}65%{transform:translateX(50vw) scale(1.04) rotate(-1.5deg);filter:brightness(.8) blur(0)}100%{opacity:.9;transform:translateX(112vw) scale(1.15) rotate(1deg);filter:brightness(.4) blur(7px)}}
+@keyframes ssShip{0%{opacity:0;transform:translate3d(-60vw,0,0) scale(.92)}15%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translate3d(112vw,0,0) scale(1.08)}}
 @keyframes ssUndark{to{opacity:0}}
 @keyframes ssClear1{to{opacity:0;transform:translateX(25%) scale(1.4)}}
 @keyframes ssClear2{to{opacity:0;transform:scaleX(-1) translateX(25%) scale(1.4)}}
