@@ -498,3 +498,34 @@ h2.sec{letter-spacing:.14em}
 .score-box.gold{border-color:var(--accent);background:var(--accent-soft)}
 .score-n.plain{color:var(--fg)}
 @media (max-width:640px){.score-two{grid-template-columns:1fr}}
+
+/* ---------- Set sail: ship crashes through, water washes in ---------- */
+.ss-stage{position:fixed;inset:0;z-index:60;overflow:hidden;cursor:pointer;background:radial-gradient(ellipse at 50% 120%,rgba(201,167,102,.10),transparent 60%),rgba(11,11,11,.82);animation:ssDim .25s ease both}
+.ss-stage.ss-out{background:transparent;animation:none}
+.ss-ship{position:absolute;left:50%;bottom:4vh;width:min(80vw,940px);transform-origin:50% 80%;animation:ssShip 1.3s cubic-bezier(.5,0,.3,1) both}
+.ss-ship-svg{width:100%;height:auto;display:block;filter:drop-shadow(0 30px 60px rgba(0,0,0,.6))}
+.ss-crash{position:absolute;left:50%;bottom:18vh;width:0;height:0}
+.ss-drops i{position:absolute;left:0;top:0;width:var(--s);height:var(--s);border-radius:50%;background:#E3C88F;opacity:0;animation:ssDrop .7s cubic-bezier(.2,.7,.3,1) both}
+.ss-drops i:nth-child(3n){background:#F2F2EF}
+.ss-drops i:nth-child(4n){background:#C9A766}
+.ss-wave-in,.ss-wave-out{position:absolute;left:0;right:0;bottom:0;height:120%;display:flex;flex-direction:column}
+.ss-wave-in svg,.ss-wave-out svg{width:100%;height:90px;display:block;flex:none;margin-bottom:-1px}
+.ss-wave-in path,.ss-wave-out path{fill:#12100A;stroke:#C9A766;stroke-width:3;vector-effect:non-scaling-stroke}
+.ss-wall{flex:1;background:#12100A}
+.ss-wave-in{transform:translateY(100%);animation:ssRise .5s 1.22s cubic-bezier(.6,0,.4,1) both}
+.ss-wave-out{transform:translateY(-10%);animation:ssFall .8s .15s cubic-bezier(.5,0,.5,1) both}
+.ss-splash{position:absolute;left:50%;top:38%;width:0;height:0}
+@keyframes ssDim{from{opacity:0}to{opacity:1}}
+@keyframes ssShip{
+  0%{transform:translate(-170%,6vh) scale(.4) rotate(-6deg)}
+  40%{transform:translate(-100%,1vh) scale(.62) rotate(5deg)}
+  65%{transform:translate(-58%,0) scale(.95) rotate(-5deg)}
+  82%{transform:translate(-50%,-3vh) scale(1.35) rotate(2deg)}
+  92%{transform:translate(-48%,4vh) scale(1.55) rotate(9deg)}
+  100%{transform:translate(-46%,14vh) scale(1.7) rotate(14deg)}}
+@keyframes ssDrop{0%{opacity:0;transform:translate(0,0) scale(.3)}12%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translate(calc(var(--dx) * 1.6),calc(var(--dy) * 1.5 + 160px)) scale(1.1)}}
+.ss-crash::before{content:"";position:absolute;left:-46vw;top:-30vh;width:92vw;height:36vh;border-radius:50% 50% 0 0;border-top:6px solid #F2F2EF;opacity:0;transform:scaleY(.2);transform-origin:50% 100%;animation:ssSpray .55s 1.05s ease-out both}
+@keyframes ssSpray{0%{opacity:0;transform:scaleY(.1)}30%{opacity:.9}100%{opacity:0;transform:scaleY(1.2)}}
+@keyframes ssRise{to{transform:translateY(-12%)}}
+@keyframes ssFall{from{transform:translateY(-10%)}to{transform:translateY(105%)}}
+@media (prefers-reduced-motion:reduce){.ss-stage{display:none}}

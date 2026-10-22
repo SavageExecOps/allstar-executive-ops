@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { SetSailIntro } from '@/components/SetSail';
 import { useData } from '@/components/DataProvider';
 import { HOME_LINES, HOME_TITLE } from '@/lib/lines';
 import { metrics } from '@/lib/tasks';
@@ -11,6 +13,11 @@ export default function Home() {
   const { ready, tasks, homeName, error } = useData();
   const [now, setNow] = useState<Date | null>(null);
   const [lineIdx, setLineIdx] = useState<number | null>(null);
+  const router = useRouter();
+  const [sailing, setSailing] = useState(false);
+  const gone = useRef(false);
+  useEffect(() => { router.prefetch('/command'); }, [router]);
+  const arrive = useCallback(() => { if (gone.current) return; gone.current = true; router.push('/command'); }, [router]);
   useEffect(() => { setNow(new Date()); const i = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(i); }, []);
   // A fresh line on every visit, never the same one twice in a row.
   useEffect(() => {
@@ -68,13 +75,17 @@ export default function Home() {
         )}
 
         <div className="home-ctas">
-          <Link href="/command" className="home-cta">
+          <Link href="/command" className="home-cta" onClick={e => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault(); setSailing(true);
+          }}>
             Set sail
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
           </Link>
           <Link href="/my-day" className="home-ghost">Open My Day</Link>
         </div>
       </main>
+      {sailing && <SetSailIntro onDone={arrive} />}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { UICtx, useUI, type QuickKind } from './UI';
 import { Icon, NAV } from './nav';
 import { BlockEditor, ProjectDrawer, QuickAdd, TaskDrawer } from './Overlays';
 import { NowBar } from './NowBar';
+import { SetSailReveal } from './SetSail';
 import { isOpen, isWaiting } from '@/lib/tasks';
 import { isPrivate } from '@/lib/notes';
 
@@ -111,6 +112,7 @@ function ShellInner({ children }: { children: ReactNode }) {
       {layer?.kind === 'project' && <ProjectDrawer id={layer.id} onClose={close} />}
       {layer?.kind === 'block' && <BlockEditor id={layer.id} onClose={close} />}
       {layer?.kind === 'quick' && <QuickAdd kind={layer.q} onClose={close} />}
+      <SetSailReveal />
     </UICtx.Provider>
   );
 }
