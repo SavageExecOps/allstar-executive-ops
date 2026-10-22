@@ -1,97 +1,84 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const KEY = 'aeo.sail';
+const SPLASH = '/sail/splash.mp4';
+const SPLASH_WEBM = '/sail/splash.webm';
+const Sources = () => <><source src={SPLASH} type="video/mp4" /><source src={SPLASH_WEBM} type="video/webm" /></>;
+// Drop a clean, transparent ship PNG at public/sail/ship.png and set this to '/sail/ship.png'.
+const SHIP: string | null = null;
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-/** An original three-masted ship, gold on black. */
-function Ship() {
-  return (
-    <svg viewBox="0 0 640 520" className="ss-ship-svg" aria-hidden="true">
-      <g fill="none" stroke="#C9A766" strokeWidth="5" strokeLinejoin="round" strokeLinecap="round">
-        {/* masts */}
-        <path d="M200 400V90M330 400V40M450 400V110" />
-        {/* sails: billowing forward */}
-        <path d="M200 110c48 22 56 74 40 120H200z" fill="#F2F2EF" stroke="#F2F2EF" />
-        <path d="M200 250c56 20 66 70 48 108H200z" fill="#E8E5DC" stroke="#E8E5DC" />
-        <path d="M330 62c62 26 72 92 52 150H330z" fill="#F2F2EF" stroke="#F2F2EF" />
-        <path d="M330 232c68 24 78 82 56 128H330z" fill="#E8E5DC" stroke="#E8E5DC" />
-        <path d="M450 130c40 18 46 62 32 98H450z" fill="#F2F2EF" stroke="#F2F2EF" />
-        <path d="M450 248c46 18 52 60 36 92H450z" fill="#E8E5DC" stroke="#E8E5DC" />
-        {/* bowsprit + jib */}
-        <path d="M560 395L630 330" />
-        <path d="M450 130L626 334L470 350z" fill="#D9D5CA" stroke="#D9D5CA" strokeWidth="3" />
-        {/* flags */}
-        <path d="M330 40l44 12-44 12z" fill="#C9A766" />
-        <path d="M200 90l30 9-30 9z" fill="#C9A766" />
-        {/* hull */}
-        <path d="M70 392h520c-14 46-50 78-104 86H178c-56-6-92-38-108-86z" fill="#C9A766" />
-        <path d="M96 420h460" stroke="#0B0B0B" strokeWidth="4" />
-        <path d="M140 444h380" stroke="#0B0B0B" strokeWidth="3" opacity=".6" />
-        {/* stern castle */}
-        <path d="M70 392V360h96v32" fill="#B99555" />
-      </g>
-    </svg>
-  );
-}
-
-function Droplets({ n = 22, delay = 0 }: { n?: number; delay?: number }) {
-  return (
-    <div className="ss-drops" aria-hidden="true">
-      {Array.from({ length: n }, (_, i) => {
-        const a = (i / n) * Math.PI - Math.PI; // upper half-circle
-        const d = 180 + ((i * 53) % 220);
-        return <i key={i} style={{ ['--dx' as string]: `${Math.cos(a) * d}px`, ['--dy' as string]: `${Math.sin(a) * d}px`, ['--s' as string]: `${12 + (i * 7) % 26}px`, animationDelay: `${delay + (i % 5) * 18}ms` }} />;
-      })}
-    </div>
-  );
-}
-
-const Wave = ({ className }: { className: string }) => (
-  <div className={className} aria-hidden="true">
-    <svg viewBox="0 0 1440 120" preserveAspectRatio="none"><path d="M0 60c120-50 240-50 360 0s240 50 360 0 240-50 360 0 240 50 360 0v60H0z" /></svg>
-    <div className="ss-wall" />
-  </div>
-);
+// Timeline (ms): fog rolls in, the water hits at HIT, we change pages at GO and the
+// next page picks the same splash up where it left off.
+const HIT = 950;
+const GO = 1450;
 
 /**
- * The "Set sail" launch: the ship crashes through, the water rises over the screen,
- * then the page you go to washes in. Click anywhere to skip. Off when reduced motion is on.
+ * "Set sail": the screen goes dark, fog rolls in (and the ship rips through it when there's a
+ * ship image), then real water slams the screen. Click to skip. Off with reduced motion.
  */
 export function SetSailIntro({ onDone }: { onDone: () => void }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const [hit, setHit] = useState(false);
   useEffect(() => {
     if (reduced()) { onDone(); return; }
-    try { sessionStorage.setItem(KEY, String(Date.now())); } catch { /* ignore */ }
-    const t = setTimeout(onDone, 1800);
-    return () => clearTimeout(t);
+    const a = setTimeout(() => { setHit(true); video.current?.play().catch(() => { /* autoplay blocked: fog only */ }); }, HIT);
+    const b = setTimeout(() => {
+      try { sessionStorage.setItem(KEY, JSON.stringify({ at: Date.now(), t: video.current?.currentTime ?? 0.5 })); } catch { /* ignore */ }
+      onDone();
+    }, GO);
+    return () => { clearTimeout(a); clearTimeout(b); };
   }, [onDone]);
   return (
     <div className="ss-stage" role="presentation" onClick={onDone}>
-      <div className="ss-ship"><Ship /></div>
-      <div className="ss-crash"><Droplets n={36} delay={1050} /></div>
-      <Wave className="ss-wave-in" />
+      <div className="ss-fog f1" />
+      <div className="ss-glow" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {SHIP && <img className="ss-ship" src={SHIP} alt="" aria-hidden="true" />}
+      <div className="ss-fog f2" />
+      <div className="ss-fog f3" />
+      <video ref={video} className={`ss-water ${hit ? 'on' : ''}`} muted playsInline preload="auto" aria-hidden="true"><Sources /></video>
     </div>
   );
 }
 
-/** Mounted in the app shell: if you just set sail, the water washes away to reveal the page. */
+/** Keeps the splash in the browser cache so it plays instantly. Render it on the page with the button. */
+export function SetSailPreload() {
+  return <video muted playsInline preload="auto" aria-hidden="true" style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}><Sources /></video>;
+}
+
+/** In the app shell: the splash keeps going over the new page, then drains away. */
 export function SetSailReveal() {
-  const [on, setOn] = useState(false);
+  const [from, setFrom] = useState<number | null>(null);
+  const [going, setGoing] = useState(false);
+  const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    let at = 0;
-    try { at = Number(sessionStorage.getItem(KEY) || 0); sessionStorage.removeItem(KEY); } catch { /* ignore */ }
-    if (at && Date.now() - at < 8000 && !reduced()) {
-      setOn(true);
-      const t = setTimeout(() => setOn(false), 1100);
-      return () => clearTimeout(t);
+    let v: { at: number; t: number } | null = null;
+    try { v = JSON.parse(sessionStorage.getItem(KEY) || 'null'); sessionStorage.removeItem(KEY); } catch { /* ignore */ }
+    if (v && Date.now() - v.at < 8000 && !reduced()) {
+      setFrom(v.t);
+      // Safety net: never hold the page more than 2.5s, even if the video can't play.
+      const done = setTimeout(() => setFrom(null), 2500);
+      return () => clearTimeout(done);
     }
   }, []);
-  if (!on) return null;
+  useEffect(() => {
+    const el = video.current;
+    if (from == null || !el) return;
+    const start = () => { try { el.currentTime = Math.min(from + 0.05, 1.2); } catch { /* ignore */ } el.play().catch(() => setFrom(null)); };
+    // The drain starts only once the water is actually moving, then clears 1.3s later.
+    const playing = () => { setGoing(true); setTimeout(() => setFrom(null), 1300); };
+    el.addEventListener('playing', playing, { once: true });
+    if (el.readyState >= 1) start(); else el.addEventListener('loadedmetadata', start, { once: true });
+    return () => el.removeEventListener('playing', playing);
+  }, [from]);
+  if (from == null) return null;
   return (
-    <div className="ss-stage ss-out" role="presentation" onClick={() => setOn(false)}>
-      <Wave className="ss-wave-out" />
-      <div className="ss-splash"><Droplets n={28} delay={80} /></div>
+    <div className={`ss-stage ss-out ${going ? 'go' : ''}`} role="presentation" onClick={() => setFrom(null)}>
+      <div className="ss-dark" />
+      <video ref={video} className="ss-water" muted playsInline preload="auto" aria-hidden="true"><Sources /></video>
     </div>
   );
 }

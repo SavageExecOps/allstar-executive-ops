@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SetSailIntro } from '@/components/SetSail';
+import { SetSailIntro, SetSailPreload } from '@/components/SetSail';
 import { useData } from '@/components/DataProvider';
 import { HOME_LINES, HOME_TITLE } from '@/lib/lines';
 import { metrics } from '@/lib/tasks';
@@ -16,7 +16,9 @@ export default function Home() {
   const router = useRouter();
   const [sailing, setSailing] = useState(false);
   const gone = useRef(false);
-  useEffect(() => { router.prefetch('/command'); }, [router]);
+  useEffect(() => {
+    router.prefetch('/command');
+  }, [router]);
   const arrive = useCallback(() => { if (gone.current) return; gone.current = true; router.push('/command'); }, [router]);
   useEffect(() => { setNow(new Date()); const i = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(i); }, []);
   // A fresh line on every visit, never the same one twice in a row.
@@ -85,6 +87,7 @@ export default function Home() {
           <Link href="/my-day" className="home-ghost">Open My Day</Link>
         </div>
       </main>
+      <SetSailPreload />
       {sailing && <SetSailIntro onDone={arrive} />}
     </div>
   );
